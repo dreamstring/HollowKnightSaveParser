@@ -67,11 +67,13 @@ namespace HollowKnightSaveParser.ViewModels
         private void InitializeSaveDirectory()
         {
             var localLowPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "AppData", "LocalLow", "Team Cherry", "Hollow Knight");
-
-            SaveDirectory = Directory.Exists(localLowPath) ? localLowPath : "存档目录不存在";
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "..", "LocalLow", "Team Cherry", "Hollow Knight");
+            localLowPath = Path.GetFullPath(localLowPath);
+    
+            SaveDirectory = Directory.Exists(localLowPath) ? localLowPath : string.Empty;
         }
+
 
         [RelayCommand]
         private async Task LoadSaveFilesAsync()
