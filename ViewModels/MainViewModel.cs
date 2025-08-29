@@ -123,84 +123,79 @@ namespace HollowKnightSaveParser.ViewModels
         }
 
         private SaveFileInfo[] GroupSaveFiles()
+{
+    if (!Directory.Exists(SaveDirectory))
+        return Array.Empty<SaveFileInfo>();
+
+    var allFiles = Directory.GetFiles(SaveDirectory, "user*", SearchOption.TopDirectoryOnly);
+    var saveFileGroups = new Dictionary<int, SaveFileInfo>();
+
+    foreach (var filePath in allFiles)
+    {
+        var fileName = Path.GetFileName(filePath);
+        
+        //精确匹配不同类型的存档文件
+        var patterns = new[]
         {
-            if (!Directory.Exists(SaveDirectory))
-                return Array.Empty<SaveFileInfo>();
+            // 标准存档文件
+            (@"^user(\d+)\.dat$", "dat", "standard"),
+            (@"^user(\d+)\.json$", "json", "standard"),
+            
+            // 版本备份文件
+            (@"^user(\d+)_[\d\.]+\.dat$", "dat", "backup"),
+            
+            // Mod 文件
+            (@"^user(\d+)\.modded\.json$", "json", "modded"),
+            (@"^user(\d+)\.modded\.json\.bak$", "json", "modded_backup"),
+            
+            // 其他备份文件
+            (@"^user(\d+)\.dat\.bak\d*$", "dat", "backup"),
+        };
 
-            var allFiles = Directory.GetFiles(SaveDirectory, "*", SearchOption.TopDirectoryOnly);
-
-            // 更严格的正则表达式，确保只匹配真正的存档文件
-            var saveFilePatterns = new[]
+        foreach (var (pattern, fileType, category) in patterns)
+        {
+            var match = Regex.Match(fileName, pattern, RegexOptions.IgnoreCase);
+            if (match.Success)
             {
-                new Regex(@"^user(\d+)\.dat$", RegexOptions.IgnoreCase), // user1.dat
-                new Regex(@"^user(\d+)\.json$", RegexOptions.IgnoreCase), // user1.json  
-                new Regex(@"^user(\d+)\..*\.dat$", RegexOptions.IgnoreCase), // user1.1.4.3.2.dat
-                new Regex(@"^user(\d+)\..*\.json$", RegexOptions.IgnoreCase), // user1.modded.json
-            };
-
-            var saveFileGroups = allFiles
-                .Select(file =>
+                var slotNumber = int.Parse(match.Groups[1].Value);
+                
+                if (!saveFileGroups.ContainsKey(slotNumber))
                 {
-                    var fileName = Path.GetFileName(file);
-                    foreach (var pattern in saveFilePatterns)
+                    saveFileGroups[slotNumber] = new SaveFileInfo
                     {
-                        var match = pattern.Match(fileName);
-                        if (match.Success)
-                        {
-                            var slotNumber = int.Parse(match.Groups[1].Value);
-                            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-
-                            return new
-                            {
-                                FilePath = file,
-                                FileName = fileName,
-                                SlotNumber = slotNumber,
-                                Extension = extension,
-                                IsValid = true
-                            };
-                        }
-                    }
-
-                    return new
-                    {
-                        FilePath = file, FileName = fileName, SlotNumber = 0, Extension = "", IsValid = false
+                        SlotNumber = slotNumber,
+                        BaseName = $"user{slotNumber}"
                     };
-                })
-                .Where(f => f.IsValid)
-                .GroupBy(f => f.SlotNumber)
-                .Select(group =>
+                }
+
+                var saveInfo = saveFileGroups[slotNumber];
+                
+                // 🔍 只设置标准文件路径，忽略备份和 mod 文件
+                if (category == "standard")
                 {
-                    var saveInfo = new SaveFileInfo
+                    if (fileType == "dat")
                     {
-                        SlotNumber = group.Key,
-                        BaseName = $"user{group.Key}" // 设置基础名称
-                    };
-
-                    foreach (var file in group)
-                    {
-                        if (file.Extension == ".dat")
-                        {
-                            saveInfo.DatFilePath = file.FilePath;
-                        }
-                        else if (file.Extension == ".json")
-                        {
-                            saveInfo.JsonFilePath = file.FilePath;
-                        }
+                        saveInfo.DatFilePath = filePath;
                     }
-
-                    // 如果只有一个文件，使用完整的文件名作为基础名称
-                    if (group.Count() == 1)
+                    else if (fileType == "json")
                     {
-                        var singleFile = group.First();
-                        saveInfo.BaseName = Path.GetFileNameWithoutExtension(singleFile.FileName);
+                        saveInfo.JsonFilePath = filePath;
                     }
-
-                    return saveInfo;
-                })
-                .ToArray();
-
-            return saveFileGroups;
+                }
+                
+                // 记录所有相关文件（用于调试或显示）
+                if (saveInfo.RelatedFiles == null)
+                    saveInfo.RelatedFiles = new List<string>();
+                saveInfo.RelatedFiles.Add(fileName);
+                
+                break; // 匹配到一个模式就跳出
+            }
         }
+    }
+
+    return saveFileGroups.Values.OrderBy(s => s.SlotNumber).ToArray();
+}
+
 
         [RelayCommand]
         private async Task ConvertDatToJsonAsync(SaveFileInfo? saveFile)

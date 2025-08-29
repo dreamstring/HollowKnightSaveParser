@@ -1,6 +1,4 @@
-﻿// Services/SaveFileService.cs
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -20,17 +18,11 @@ namespace HollowKnightSaveParser.Services
         {
             try
             {
-                // 1. 读取并解析 DAT 文件
                 string base64EncryptedData = ExtractBase64FromDatFile(datFilePath);
-                
-                // 2. AES 解密
-                string jsonString = DecryptAES(base64EncryptedData);
-                
-                // 3. 格式化 JSON
+                string jsonString = DecryptData(base64EncryptedData);
                 var jsonObject = JObject.Parse(jsonString);
                 var formattedJson = jsonObject.ToString(Formatting.Indented);
                 
-                // 4. 保存文件
                 outputPath ??= Path.ChangeExtension(datFilePath, ".json");
                 await File.WriteAllTextAsync(outputPath, formattedJson, Encoding.UTF8);
                 
@@ -55,16 +47,27 @@ namespace HollowKnightSaveParser.Services
         {
             try
             {
-                // 1. 读取 JSON
                 var jsonContent = await File.ReadAllTextAsync(jsonFilePath, Encoding.UTF8);
                 var compactJson = JObject.Parse(jsonContent).ToString(Formatting.None);
                 
-                // 2. AES 加密
-                string base64EncryptedData = EncryptAES(compactJson);
+                string base64EncryptedData = EncryptData(compactJson);
                 
-                // 3. 创建 DAT 文件
                 outputPath ??= Path.ChangeExtension(jsonFilePath, ".dat");
-                CreateDatFile(outputPath, base64EncryptedData);
+                
+                // 关键：必须要有原始 DAT 文件作为模板
+                string? templatePath = FindTemplateDatFile(jsonFilePath);
+                if (templatePath == null)
+                {
+                    return new ConversionResult
+                    {
+                        Success = false,
+                        Message = "错误：必须要有原始的 .dat 文件作为模板！\n" +
+                                "请将要修改的原始 .dat 文件放在同一目录下，或者重命名为与 JSON 文件相同的名称。"
+                    };
+                }
+
+                // 使用原始文件作为完美模板
+                await CreateDatFromExactTemplate(templatePath, outputPath, base64EncryptedData);
                 
                 return new ConversionResult
                 {
@@ -83,189 +86,315 @@ namespace HollowKnightSaveParser.Services
             }
         }
 
-        private string ExtractBase64FromDatFile(string filePath)
+        // 加密解密方法 - 使用与你原始代码完全相同的实现
+        private string EncryptData(string toEncrypt)
         {
-            var fileBytes = File.ReadAllBytes(filePath);
+            byte[] bytes = Encoding.UTF8.GetBytes(toEncrypt);
             
-            // 方法1: 直接搜索 Base64 模式
-            var fileText = Encoding.UTF8.GetString(fileBytes);
-            var base64Match = Regex.Match(fileText, @"[A-Za-z0-9+/]{100,}={0,2}");
-            if (base64Match.Success)
-            {
-                var candidate = base64Match.Value;
-                if (IsValidBase64(candidate))
-                {
-                    return candidate;
-                }
-            }
+            using var aes = Aes.Create();
+            aes.Key = HollowKnightKey;
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.BlockSize = 128; // 确保与 RijndaelManaged 一致
             
-            // 方法2: 手动解析二进制数据
-            return ParseBinaryData(fileBytes);
+            using var encryptor = aes.CreateEncryptor();
+            byte[] encrypted = encryptor.TransformFinalBlock(bytes, 0, bytes.Length);
+            return Convert.ToBase64String(encrypted, 0, encrypted.Length);
         }
 
-        private string ParseBinaryData(byte[] data)
+        private string DecryptData(string toDecrypt)
         {
-            // 查找所有可能的字符串
-            var candidates = new List<string>();
+            byte[] array = Convert.FromBase64String(toDecrypt);
             
-            for (int i = 0; i < data.Length - 4; i++)
-            {
-                // 查找字符串长度标记
-                if (data[i] == 0x06 || data[i] == 0x12) // BinaryFormatter 字符串标记
-                {
-                    try
-                    {
-                        int length = ReadVariableLength(data, i + 1, out int bytesRead);
-                        int startPos = i + 1 + bytesRead;
-                        
-                        if (length > 50 && length < 10000 && startPos + length <= data.Length)
-                        {
-                            var stringBytes = new byte[length];
-                            Array.Copy(data, startPos, stringBytes, 0, length);
-                            var candidate = Encoding.UTF8.GetString(stringBytes);
-                            
-                            if (IsValidBase64(candidate))
-                            {
-                                return candidate;
-                            }
-                        }
-                    }
-                    catch { continue; }
-                }
-            }
+            using var aes = Aes.Create();
+            aes.Key = HollowKnightKey;
+            aes.Mode = CipherMode.ECB;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.BlockSize = 128;
             
-            // 方法3: 暴力搜索连续的可打印字符
-            var currentString = new StringBuilder();
-            for (int i = 0; i < data.Length; i++)
-            {
-                byte b = data[i];
-                if ((b >= 32 && b <= 126) || b == 43 || b == 47 || b == 61) // 可打印字符 + Base64 字符
-                {
-                    currentString.Append((char)b);
-                }
-                else
-                {
-                    if (currentString.Length > 100)
-                    {
-                        var candidate = currentString.ToString();
-                        if (IsValidBase64(candidate))
-                        {
-                            return candidate;
-                        }
-                    }
-                    currentString.Clear();
-                }
-            }
-            
-            // 最后检查
-            if (currentString.Length > 100)
-            {
-                var candidate = currentString.ToString();
-                if (IsValidBase64(candidate))
-                {
-                    return candidate;
-                }
-            }
-            
-            throw new InvalidDataException("无法从DAT文件中提取Base64数据");
+            using var decryptor = aes.CreateDecryptor();
+            byte[] decrypted = decryptor.TransformFinalBlock(array, 0, array.Length);
+            return Encoding.UTF8.GetString(decrypted);
         }
 
-        private int ReadVariableLength(byte[] data, int startIndex, out int bytesRead)
+        // 查找模板文件 - 更智能的查找逻辑
+        private string? FindTemplateDatFile(string jsonFilePath)
         {
-            bytesRead = 0;
-            int result = 0;
-            int shift = 0;
+            string directory = Path.GetDirectoryName(jsonFilePath) ?? "";
+            string jsonFileName = Path.GetFileNameWithoutExtension(jsonFilePath);
             
-            for (int i = startIndex; i < data.Length && bytesRead < 5; i++, bytesRead++)
+            // 1. 优先查找同名的 DAT 文件
+            string sameName = Path.Combine(directory, jsonFileName + ".dat");
+            if (File.Exists(sameName))
             {
-                byte b = data[i];
-                result |= (b & 0x7F) << shift;
-                shift += 7;
-                
-                if ((b & 0x80) == 0)
+                return sameName;
+            }
+            
+            // 2. 查找移除后缀的原始文件
+            string[] suffixes = { "_backup", "_modified", "_edited", "_copy", "_new" };
+            foreach (string suffix in suffixes)
+            {
+                if (jsonFileName.EndsWith(suffix))
                 {
-                    bytesRead++;
-                    break;
+                    string originalName = jsonFileName.Substring(0, jsonFileName.Length - suffix.Length);
+                    string originalPath = Path.Combine(directory, originalName + ".dat");
+                    if (File.Exists(originalPath))
+                    {
+                        return originalPath;
+                    }
                 }
+            }
+            
+            // 3. 查找同目录下任何有效的 DAT 文件
+            var datFiles = Directory.GetFiles(directory, "*.dat");
+            foreach (var datFile in datFiles)
+            {
+                try
+                {
+                    // 测试是否能成功解析
+                    ExtractBase64FromDatFile(datFile);
+                    return datFile;
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+            
+            return null;
+        }
+
+        // 精确模板复制 - 这是关键方法
+        private async Task CreateDatFromExactTemplate(string templatePath, string outputPath, string newBase64Data)
+        {
+            // 读取模板文件的所有字节
+            byte[] templateBytes = await File.ReadAllBytesAsync(templatePath);
+            
+            // 提取模板中的旧 Base64 数据
+            string oldBase64Data = ExtractBase64FromDatFile(templatePath);
+            
+            // 在字节级别进行精确替换
+            byte[] newFileBytes = ReplaceBase64InBinaryData(templateBytes, oldBase64Data, newBase64Data);
+            
+            // 写入新文件
+            await File.WriteAllBytesAsync(outputPath, newFileBytes);
+            
+            // 验证生成的文件
+            try
+            {
+                string testBase64 = ExtractBase64FromDatFile(outputPath);
+                string testJson = DecryptData(testBase64);
+                JObject.Parse(testJson); // 验证 JSON 是否有效
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"生成的 DAT 文件验证失败: {ex.Message}");
+            }
+        }
+
+        // 二进制数据替换 - 最关键的方法
+        private byte[] ReplaceBase64InBinaryData(byte[] originalBytes, string oldBase64, string newBase64)
+        {
+            byte[] oldBase64Bytes = Encoding.UTF8.GetBytes(oldBase64);
+            byte[] newBase64Bytes = Encoding.UTF8.GetBytes(newBase64);
+            
+            // 查找旧数据的确切位置
+            int position = FindExactByteSequence(originalBytes, oldBase64Bytes);
+            if (position == -1)
+            {
+                throw new InvalidOperationException("无法在模板文件中找到 Base64 数据的确切位置");
+            }
+            
+            Console.WriteLine($"找到 Base64 数据位置: {position}");
+            Console.WriteLine($"旧数据长度: {oldBase64Bytes.Length}, 新数据长度: {newBase64Bytes.Length}");
+            
+            // 创建新的字节数组
+            int newLength = originalBytes.Length - oldBase64Bytes.Length + newBase64Bytes.Length;
+            byte[] result = new byte[newLength];
+            
+            // 复制数据前的部分
+            Array.Copy(originalBytes, 0, result, 0, position);
+            
+            // 插入新的 Base64 数据
+            Array.Copy(newBase64Bytes, 0, result, position, newBase64Bytes.Length);
+            
+            // 复制数据后的部分
+            int remainingStart = position + oldBase64Bytes.Length;
+            int remainingLength = originalBytes.Length - remainingStart;
+            if (remainingLength > 0)
+            {
+                Array.Copy(originalBytes, remainingStart, result, position + newBase64Bytes.Length, remainingLength);
+            }
+            
+            // 如果长度发生变化，需要更新 BinaryFormatter 中的长度字段
+            if (oldBase64Bytes.Length != newBase64Bytes.Length)
+            {
+                UpdateBinaryFormatterLength(result, position, oldBase64.Length, newBase64.Length);
             }
             
             return result;
         }
 
-        private void CreateDatFile(string filePath, string base64Data)
+        // 查找精确的字节序列
+        private int FindExactByteSequence(byte[] haystack, byte[] needle)
         {
-            using var stream = new FileStream(filePath, FileMode.Create);
-            using var writer = new BinaryWriter(stream);
-            
-            // 简化的 BinaryFormatter 头部
-            writer.Write(new byte[] { 0x00, 0x01, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
-            
-            // 写入字符串数据
-            writer.Write((byte)0x06); // 字符串类型
-            WriteVariableLength(writer, base64Data.Length);
-            writer.Write(Encoding.UTF8.GetBytes(base64Data));
-            
-            // 结束标记
-            writer.Write((byte)0x0B);
-        }
-
-        private void WriteVariableLength(BinaryWriter writer, int value)
-        {
-            while (value >= 0x80)
+            for (int i = 0; i <= haystack.Length - needle.Length; i++)
             {
-                writer.Write((byte)(value | 0x80));
-                value >>= 7;
+                bool match = true;
+                for (int j = 0; j < needle.Length; j++)
+                {
+                    if (haystack[i + j] != needle[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match)
+                {
+                    return i;
+                }
             }
-            writer.Write((byte)value);
+            return -1;
         }
 
-        private string DecryptAES(string base64Data)
+        // 更新 BinaryFormatter 中的长度字段
+        private void UpdateBinaryFormatterLength(byte[] data, int dataPosition, int oldLength, int newLength)
         {
-            var encryptedBytes = Convert.FromBase64String(base64Data);
-            
-            using var aes = Aes.Create();
-            aes.Key = HollowKnightKey;
-            aes.Mode = CipherMode.ECB;
-            aes.Padding = PaddingMode.PKCS7;
-            
-            using var decryptor = aes.CreateDecryptor();
-            var decryptedBytes = decryptor.TransformFinalBlock(encryptedBytes, 0, encryptedBytes.Length);
-            
-            return Encoding.UTF8.GetString(decryptedBytes);
+            // 在数据位置之前查找长度编码
+            for (int i = Math.Max(0, dataPosition - 20); i < dataPosition; i++)
+            {
+                // 查找可能的长度编码位置
+                if (TryUpdateLengthAt(data, i, oldLength, newLength))
+                {
+                    Console.WriteLine($"在位置 {i} 更新了长度字段");
+                    break;
+                }
+            }
         }
 
-        private string EncryptAES(string plainText)
+        private bool TryUpdateLengthAt(byte[] data, int position, int oldLength, int newLength)
         {
-            var plainBytes = Encoding.UTF8.GetBytes(plainText);
+            try
+            {
+                // 尝试读取变长整数
+                int readLength = ReadVariableInt(data, position, out int bytesUsed);
+                if (readLength == oldLength && bytesUsed > 0)
+                {
+                    // 找到了匹配的长度，更新它
+                    WriteVariableInt(data, position, newLength, bytesUsed);
+                    return true;
+                }
+            }
+            catch
+            {
+                // 忽略错误，继续查找
+            }
+            return false;
+        }
+
+        private int ReadVariableInt(byte[] data, int position, out int bytesUsed)
+        {
+            bytesUsed = 0;
+            int result = 0;
+            int shift = 0;
             
-            using var aes = Aes.Create();
-            aes.Key = HollowKnightKey;
-            aes.Mode = CipherMode.ECB;
-            aes.Padding = PaddingMode.PKCS7;
+            while (position + bytesUsed < data.Length && bytesUsed < 5)
+            {
+                byte b = data[position + bytesUsed];
+                result |= (b & 0x7F) << shift;
+                bytesUsed++;
+                shift += 7;
+                
+                if ((b & 0x80) == 0)
+                {
+                    return result;
+                }
+            }
             
-            using var encryptor = aes.CreateEncryptor();
-            var encryptedBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+            throw new InvalidDataException("无效的变长整数");
+        }
+
+        private void WriteVariableInt(byte[] data, int position, int value, int maxBytes)
+        {
+            int bytesWritten = 0;
+            while (value >= 0x80 && bytesWritten < maxBytes - 1)
+            {
+                data[position + bytesWritten] = (byte)(value | 0x80);
+                value >>= 7;
+                bytesWritten++;
+            }
             
-            return Convert.ToBase64String(encryptedBytes);
+            if (bytesWritten < maxBytes)
+            {
+                data[position + bytesWritten] = (byte)value;
+            }
+        }
+
+        // Base64 提取方法
+        private string ExtractBase64FromDatFile(string filePath)
+        {
+            byte[] fileBytes = File.ReadAllBytes(filePath);
+            
+            // 方法1: 正则表达式查找
+            string fileText = Encoding.UTF8.GetString(fileBytes);
+            var matches = Regex.Matches(fileText, @"[A-Za-z0-9+/]{100,}={0,2}");
+            
+            foreach (Match match in matches)
+            {
+                if (IsValidBase64(match.Value))
+                {
+                    return match.Value;
+                }
+            }
+            
+            // 方法2: 字节扫描
+            return ScanForBase64InBytes(fileBytes);
+        }
+
+        private string ScanForBase64InBytes(byte[] data)
+        {
+            var sb = new StringBuilder();
+            
+            for (int i = 0; i < data.Length; i++)
+            {
+                byte b = data[i];
+                
+                // Base64 字符范围
+                if ((b >= 65 && b <= 90) ||   // A-Z
+                    (b >= 97 && b <= 122) ||  // a-z
+                    (b >= 48 && b <= 57) ||   // 0-9
+                    b == 43 || b == 47 || b == 61) // +/=
+                {
+                    sb.Append((char)b);
+                }
+                else
+                {
+                    if (sb.Length > 100 && IsValidBase64(sb.ToString()))
+                    {
+                        return sb.ToString();
+                    }
+                    sb.Clear();
+                }
+            }
+            
+            // 检查最后的字符串
+            if (sb.Length > 100 && IsValidBase64(sb.ToString()))
+            {
+                return sb.ToString();
+            }
+            
+            throw new InvalidDataException("无法从 DAT 文件中提取有效的 Base64 数据");
         }
 
         private bool IsValidBase64(string input)
         {
-            if (string.IsNullOrEmpty(input) || input.Length < 50)
-                return false;
-            
-            // 检查 Base64 字符集
-            if (!Regex.IsMatch(input, @"^[A-Za-z0-9+/]*={0,2}$"))
-                return false;
-            
-            // 检查长度
-            if (input.Length % 4 != 0)
+            if (string.IsNullOrEmpty(input) || input.Length < 100 || input.Length % 4 != 0)
                 return false;
             
             try
             {
-                var decoded = Convert.FromBase64String(input);
-                return decoded.Length > 10; // 解密后应该有实际内容
+                byte[] decoded = Convert.FromBase64String(input);
+                return decoded.Length > 50; // 确保有足够的数据
             }
             catch
             {
