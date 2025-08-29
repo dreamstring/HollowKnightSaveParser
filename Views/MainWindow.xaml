@@ -36,10 +36,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="空洞骑士存档解析器">
-            <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="/Assets/icon.ico" />
-            </ui:TitleBar.Icon>
+        <ui:TitleBar x:Name="MainTitleBar" Grid.Row="0" Title="空洞骑士存档解析器">
         </ui:TitleBar>
         
         <!-- 主要内容 -->
