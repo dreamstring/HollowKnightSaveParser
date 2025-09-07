@@ -19,6 +19,9 @@ namespace HollowKnightSaveParser.Models
         public bool HasDatFile => !string.IsNullOrEmpty(DatFilePath) && File.Exists(DatFilePath);
         public bool HasJsonFile => !string.IsNullOrEmpty(JsonFilePath) && File.Exists(JsonFilePath);
         
+        public bool CanBackup => HasDatFile;
+        public bool CanRestore => HasBackupFiles;
+        
         // 显示的文件名 - 显示实际的文件名
         public string DisplayFileName 
         { 
@@ -42,6 +45,7 @@ namespace HollowKnightSaveParser.Models
         }
         
         // 文件分类属性
+        // 文件分类属性
         public Dictionary<string, List<string>> CategorizedRelatedFiles
         {
             get
@@ -57,7 +61,7 @@ namespace HollowKnightSaveParser.Models
                 foreach (var file in RelatedFiles)
                 {
                     var fileName = file.ToLowerInvariant();
-                    
+            
                     // 标准存档文件
                     if (Regex.IsMatch(fileName, @"^user\d+\.(dat|json)$"))
                     {
@@ -68,8 +72,10 @@ namespace HollowKnightSaveParser.Models
                     {
                         categories["mod"].Add(file);
                     }
-                    // 备份文件
+                    // 备份文件 - 修复这里的逻辑
                     else if (fileName.Contains("bak") || 
+                             fileName.Contains("backup") ||
+                             Regex.IsMatch(fileName, @"user\d+\.\d{8}_\d{6}\.dat\.bak$") ||
                              Regex.IsMatch(fileName, @"user\d+_[\d\.]+\.(dat|json)$"))
                     {
                         categories["backup"].Add(file);
@@ -334,6 +340,42 @@ namespace HollowKnightSaveParser.Models
                 var modFiles = CategorizedRelatedFiles["mod"];
                 return modFiles.FirstOrDefault(f => f.Contains("modded.json"));
             }
+        }
+        
+        public bool HasBackupFiles
+        {
+            get
+            {
+                var categories = CategorizedRelatedFiles;
+                return categories["backup"].Any(f => f.EndsWith(".dat.bak", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+// 获取最新的备份文件路径
+        public string? LatestBackupFilePath
+        {
+            get
+            {
+                if (!HasBackupFiles) return null;
+        
+                var backupFiles = CategorizedRelatedFiles["backup"]
+                    .Where(f => f.EndsWith(".dat.bak", StringComparison.OrdinalIgnoreCase))
+                    .Select(f => Path.Combine(DirectoryPath, f))
+                    .Where(File.Exists)
+                    .OrderByDescending(File.GetLastWriteTime)
+                    .ToList();
+            
+                return backupFiles.FirstOrDefault();
+            }
+        }
+
+// 生成备份文件路径
+        public string GenerateBackupFilePath()
+        {
+            if (!HasDatFile) return string.Empty;
+    
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            return Path.ChangeExtension(DatFilePath, $".{timestamp}.dat.bak");
         }
     }
 }

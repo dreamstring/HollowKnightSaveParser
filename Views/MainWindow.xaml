@@ -5,7 +5,7 @@
                  xmlns:vm="clr-namespace:HollowKnightSaveParser.ViewModels"
                  xmlns:converters="clr-namespace:HollowKnightSaveParser.Converters"
                  ui:Design.Background="Black"
-                 Width="800" Height="742"
+                 Width="860" Height="742"
                  MinWidth="500" MinHeight="500"
                  WindowStartupLocation="CenterScreen"
                  ExtendsContentIntoTitleBar="True"
@@ -38,15 +38,16 @@
 
         <ui:TitleBar x:Name="MainTitleBar" Grid.Row="0" Title="空洞骑士存档解析器">
         </ui:TitleBar>
-        
+
         <!-- 主要内容 -->
         <Grid Grid.Row="1" Margin="20">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />  <!-- 标题区域 -->
+                <RowDefinition Height="Auto" />  <!-- Tab 控件 -->
+                <RowDefinition Height="Auto" />  <!-- 存档目录信息卡片 -->
                 <RowDefinition Height="Auto" />  <!-- 列表标题栏 -->
                 <RowDefinition Height="*" />     <!-- 列表内容区域 -->
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />  <!-- 状态栏 -->
             </Grid.RowDefinitions>
 
             <!-- 标题区域 -->
@@ -81,8 +82,86 @@
                 </StackPanel>
             </Grid>
 
+<!-- Tab按钮 - 添加描边效果 -->
+<StackPanel Grid.Row="1"
+            Orientation="Horizontal"
+            Margin="0,0,0,10"
+            HorizontalAlignment="Left">
+
+    <ui:Button x:Name="HollowKnightButton"
+               Content="初代"
+               Command="{Binding SelectGameCommand}"
+               CommandParameter="0"
+               Margin="0,0,8,0"
+               Padding="16,8">
+        <ui:Button.Style>
+            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ui:Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Content="{TemplateBinding Content}" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding SelectedGameIndex}" Value="0">
+                        <Setter Property="Background" Value="#575761" />
+                        <Setter Property="BorderBrush" Value="#6B6B75" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="Foreground" Value="#FFFFFF" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ui:Button.Style>
+    </ui:Button>
+
+    <ui:Button x:Name="SilksongButton"
+               Content="丝之歌"
+               Command="{Binding SelectGameCommand}"
+               CommandParameter="1"
+               Padding="16,8">
+        <ui:Button.Style>
+            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ui:Button">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Content="{TemplateBinding Content}" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding SelectedGameIndex}" Value="1">
+                        <Setter Property="Background" Value="#575761" />
+                        <Setter Property="BorderBrush" Value="#6B6B75" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="Foreground" Value="#FFFFFF" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ui:Button.Style>
+    </ui:Button>
+</StackPanel>
+
+
+
             <!-- 存档目录信息卡片 -->
-            <ui:Card Grid.Row="1" Margin="0,0,0,20">
+            <ui:Card Grid.Row="2" Margin="0,0,0,20">
                 <Grid Margin="6,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -116,7 +195,7 @@
             </ui:Card>
 
             <!-- 列表标题栏 - 独立出来 -->
-            <Border Grid.Row="2"
+            <Border Grid.Row="3"
                     Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
@@ -130,7 +209,7 @@
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="80" />
                         <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="320" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="槽位"
@@ -161,7 +240,7 @@
             </Border>
 
             <!-- 文件列表内容区域 - 直接使用，占满剩余空间 -->
-            <Border Grid.Row="3"
+            <Border Grid.Row="4"
                     Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1,0,1,1"
@@ -198,7 +277,7 @@
                                                 <ColumnDefinition Width="100" />
                                                 <ColumnDefinition Width="80" />
                                                 <ColumnDefinition Width="120" />
-                                                <ColumnDefinition Width="220" />
+                                                <ColumnDefinition Width="320" />
                                             </Grid.ColumnDefinitions>
 
                                             <!-- 槽位号 -->
@@ -266,7 +345,7 @@
                                                         Orientation="Horizontal"
                                                         VerticalAlignment="Center">
 
-                                                <!-- DAT转JSON按钮 -->
+                                                <!-- DAT转JSON按钮 - 添加右键菜单 -->
                                                 <ui:Button Content="{Binding DatToJsonButtonText}"
                                                            Command="{Binding DataContext.ConvertDatToJsonCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            CommandParameter="{Binding}"
@@ -274,7 +353,20 @@
                                                            FontSize="11"
                                                            Height="30"
                                                            Width="90"
-                                                           Margin="0,0,8,0">
+                                                           Margin="0,0,8,0"
+                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}">
+                                                    <ui:Button.ContextMenu>
+                                                        <ContextMenu>
+                                                            <MenuItem Header="删除 JSON 文件"
+                                                                      Command="{Binding PlacementTarget.Tag.DeleteJsonFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      IsEnabled="{Binding HasJsonFile}">
+                                                                <MenuItem.Icon>
+                                                                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" />
+                                                                </MenuItem.Icon>
+                                                            </MenuItem>
+                                                        </ContextMenu>
+                                                    </ui:Button.ContextMenu>
                                                     <ui:Button.Style>
                                                         <Style TargetType="ui:Button"
                                                                BasedOn="{StaticResource {x:Type ui:Button}}">
@@ -288,14 +380,28 @@
                                                     </ui:Button.Style>
                                                 </ui:Button>
 
-                                                <!-- JSON转DAT按钮 -->
+                                                <!-- JSON转DAT按钮 - 添加右键菜单 -->
                                                 <ui:Button Content="{Binding JsonToDatButtonText}"
                                                            Command="{Binding DataContext.ConvertJsonToDatCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            CommandParameter="{Binding}"
                                                            IsEnabled="{Binding CanConvertToDat}"
                                                            FontSize="11"
                                                            Height="30"
-                                                           Width="90">
+                                                           Width="90"
+                                                           Margin="0,0,8,0"
+                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}">
+                                                    <ui:Button.ContextMenu>
+                                                        <ContextMenu>
+                                                            <MenuItem Header="删除 DAT 文件"
+                                                                      Command="{Binding PlacementTarget.Tag.DeleteDatFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      IsEnabled="{Binding HasDatFile}">
+                                                                <MenuItem.Icon>
+                                                                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" />
+                                                                </MenuItem.Icon>
+                                                            </MenuItem>
+                                                        </ContextMenu>
+                                                    </ui:Button.ContextMenu>
                                                     <ui:Button.Style>
                                                         <Style TargetType="ui:Button"
                                                                BasedOn="{StaticResource {x:Type ui:Button}}">
@@ -308,7 +414,55 @@
                                                         </Style>
                                                     </ui:Button.Style>
                                                 </ui:Button>
+
+                                                <!-- 备份按钮 -->
+                                                <ui:Button Content="备份"
+                                                           Command="{Binding DataContext.BackupSaveFileCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
+                                                           CommandParameter="{Binding}"
+                                                           IsEnabled="{Binding CanBackup}"
+                                                           FontSize="11"
+                                                           Height="30"
+                                                           Width="54"
+                                                           Margin="0,0,8,0"
+                                                           ToolTip="备份 DAT 文件">
+                                                    <ui:Button.Style>
+                                                        <Style TargetType="ui:Button"
+                                                               BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding CanBackup}"
+                                                                             Value="False">
+                                                                    <Setter Property="Opacity" Value="0.4" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ui:Button.Style>
+                                                </ui:Button>
+
+                                                <!-- 恢复按钮 -->
+                                                <ui:Button Content="恢复"
+                                                           Command="{Binding DataContext.RestoreSaveFileCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
+                                                           CommandParameter="{Binding}"
+                                                           IsEnabled="{Binding CanRestore}"
+                                                           FontSize="11"
+                                                           Height="30"
+                                                           Width="54"
+                                                           Margin="0,0,8,0"
+                                                           ToolTip="从备份恢复">
+                                                    <ui:Button.Style>
+                                                        <Style TargetType="ui:Button"
+                                                               BasedOn="{StaticResource {x:Type ui:Button}}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding CanRestore}"
+                                                                             Value="False">
+                                                                    <Setter Property="Opacity" Value="0.4" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ui:Button.Style>
+                                                </ui:Button>
+
                                             </StackPanel>
+
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -353,7 +507,7 @@
             </Border>
 
             <!-- 简单状态栏 -->
-            <Border Grid.Row="4"
+            <Border Grid.Row="5"
                     Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="0,1,0,0"
