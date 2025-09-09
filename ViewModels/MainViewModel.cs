@@ -46,7 +46,9 @@ namespace HollowKnightSaveParser.ViewModels
         [ObservableProperty] private Dictionary<string, object> _lastOperationDetails = new();
 
         // Steam相关
-        [ObservableProperty] private bool _isSilksongMode;
+        // [ObservableProperty] private bool _isSilksongMode;
+        
+        public bool IsSilksongMode => SelectedGameIndex == 1;
 
         [ObservableProperty] private ObservableCollection<string> _availableSteamIds = new();
 
@@ -54,10 +56,88 @@ namespace HollowKnightSaveParser.ViewModels
 
         [ObservableProperty] private bool _isEnglish = false;
 
+        [ObservableProperty] private string _currentLanguage = "zh-CN";
+
         public bool HasFiles => SaveFiles.Count > 0;
         public bool HasNoFiles => !IsLoading && SaveFiles.Count == 0;
         public string SaveDirectory { get; private set; } = string.Empty;
         public string FileCountText => string.Format(GetString("FileCountFormat"), SaveFiles.Count);
+
+        private void LoadSettings()
+        {
+            try
+            {
+                SelectedGameIndex = Properties.Settings.Default.SelectedGameIndex;
+                CurrentLanguage = Properties.Settings.Default.SelectedLanguage ?? "zh-CN";
+
+                // 加载 Steam 相关设置
+                if (!string.IsNullOrEmpty(Properties.Settings.Default.SelectedSteamId))
+                {
+                    SelectedSteamId = Properties.Settings.Default.SelectedSteamId;
+                }
+
+                // 应用加载的语言设置
+                ApplyLanguage(CurrentLanguage);
+            }
+            catch (Exception ex)
+            {
+                // 使用默认值
+                SelectedGameIndex = 0;
+                CurrentLanguage = "zh-CN";
+                SelectedSteamId = null;
+                ApplyLanguage(CurrentLanguage);
+                System.Diagnostics.Debug.WriteLine($"加载设置失败: {ex.Message}");
+            }
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                Properties.Settings.Default.SelectedGameIndex = SelectedGameIndex;
+                Properties.Settings.Default.SelectedLanguage = CurrentLanguage;
+                Properties.Settings.Default.SelectedSteamId = SelectedSteamId ?? string.Empty;
+
+                // 如果有选中的 Steam 用户，也保存用户ID
+                if (SelectedSteamUser != null)
+                {
+                    Properties.Settings.Default.LastSelectedSteamUserId = SelectedSteamUser.UserId;
+                }
+
+                Properties.Settings.Default.Save();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"保存设置失败: {ex.Message}");
+            }
+        }
+
+
+        public void SaveSettingsOnExit()
+        {
+            SaveSettings();
+        }
+
+        private void ApplyLanguage(string languageCode)
+        {
+            try
+            {
+                string resourcePath = languageCode switch
+                {
+                    "en-US" => "Resources/Strings.en.xaml",
+                    _ => "Resources/Strings.xaml"
+                };
+
+                LoadLanguageResources(resourcePath);
+                IsEnglish = languageCode == "en-US";
+            }
+            catch (Exception ex)
+            {
+                // 如果加载失败，使用默认中文
+                LoadLanguageResources("Resources/Strings.xaml");
+                IsEnglish = false;
+            }
+        }
 
         private void LoadLanguageResources(string resourcePath)
         {
@@ -103,12 +183,14 @@ namespace HollowKnightSaveParser.ViewModels
                     // 当前是英文，切换到中文
                     LoadLanguageResources("Resources/Strings.xaml");
                     IsEnglish = false;
+                    CurrentLanguage = "zh-CN"; // 设置属性，会触发保存
                 }
                 else
                 {
                     // 当前是中文或未设置，切换到英文
                     LoadLanguageResources("Resources/Strings.en.xaml");
                     IsEnglish = true;
+                    CurrentLanguage = "en-US"; // 设置属性，会触发保存
                 }
 
                 // 刷新 MainViewModel 的本地化属性
@@ -126,13 +208,14 @@ namespace HollowKnightSaveParser.ViewModels
                 OnPropertyChanged(nameof(SaveFiles));
 
                 // 显示成功消息
-                ShowStatus(GetString("Success"), GetString("LanguageSwitched"), InfoBarSeverity.Success);
+                ShowStatus("Success", GetString("LanguageSwitched"), InfoBarSeverity.Success);
             }
             catch (Exception ex)
             {
-                ShowStatus(GetString("Error"), $"Language switch failed: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus("Error", $"Language switch failed: {ex.Message}", InfoBarSeverity.Error);
             }
         }
+
 
         // 获取本地化字符串的辅助方法
         private string GetString(string key)
@@ -168,7 +251,11 @@ namespace HollowKnightSaveParser.ViewModels
 
                 if (!Directory.Exists(silksongBasePath))
                 {
-                    AvailableSteamIds.Clear();
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        AvailableSteamIds.Clear();
+                        SelectedSteamId = null;
+                    });
                     ShowStatus(GetString("Info"), GetString("SilksongSaveDirectoryNotFound"), InfoBarSeverity.Warning);
                     return;
                 }
@@ -179,24 +266,46 @@ namespace HollowKnightSaveParser.ViewModels
                     .OrderBy(id => id)
                     .ToList();
 
-                AvailableSteamIds.Clear();
-                foreach (var steamId in steamIdDirs)
+                // 在主线程更新UI
+                App.Current.Dispatcher.Invoke(() =>
                 {
-                    AvailableSteamIds.Add(steamId);
-                }
+                    AvailableSteamIds.Clear();
+                    foreach (var steamId in steamIdDirs)
+                    {
+                        AvailableSteamIds.Add(steamId);
+                    }
 
-                // 默认选择第一个
-                if (AvailableSteamIds.Count > 0 && string.IsNullOrEmpty(SelectedSteamId))
-                {
-                    SelectedSteamId = AvailableSteamIds[0];
-                }
-                else if (AvailableSteamIds.Count == 0)
+                    // 尝试恢复之前选择的 Steam ID
+                    if (AvailableSteamIds.Count > 0)
+                    {
+                        var savedSteamId = Properties.Settings.Default.SelectedSteamId;
+                        if (!string.IsNullOrEmpty(savedSteamId) && AvailableSteamIds.Contains(savedSteamId))
+                        {
+                            SelectedSteamId = savedSteamId;
+                        }
+                        else
+                        {
+                            SelectedSteamId = AvailableSteamIds[0];
+                        }
+                    }
+                    else
+                    {
+                        SelectedSteamId = null;
+                    }
+                });
+
+                if (steamIdDirs.Count == 0)
                 {
                     ShowStatus(GetString("Info"), GetString("NoSteamUserDirectory"), InfoBarSeverity.Warning);
                 }
             }
             catch (Exception ex)
             {
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    AvailableSteamIds.Clear();
+                    SelectedSteamId = null;
+                });
                 ShowStatus(GetString("Error"), string.Format(GetString("LoadSteamIdFailedFormat"), ex.Message),
                     InfoBarSeverity.Error);
             }
@@ -210,26 +319,13 @@ namespace HollowKnightSaveParser.ViewModels
                    steamId.Length >= 8; // Steam ID 通常比较长
         }
 
-        // SelectGame 命令方法
         [RelayCommand]
         private async Task SelectGame(string gameIndex)
         {
             var index = int.Parse(gameIndex);
-            SelectedGameIndex = index;
-            IsSilksongMode = index == 1;
-
-            if (IsSilksongMode)
-            {
-                await LoadAvailableSteamIds();
-            }
-            else
-            {
-                AvailableSteamIds.Clear();
-                SelectedSteamId = null;
-                InitializeSaveDirectory();
-                await LoadSaveFilesAsync();
-            }
+            SelectedGameIndex = index; // 这会触发 PropertyChanged 事件，从而调用 SaveSettings()
         }
+
 
         public void SetLastOperation(string operation, Dictionary<string, object> details)
         {
@@ -240,6 +336,9 @@ namespace HollowKnightSaveParser.ViewModels
 
         public MainViewModel()
         {
+            // 首先加载设置
+            LoadSettings();
+
             // 监听集合变化
             SaveFiles.CollectionChanged += (s, e) =>
             {
@@ -248,21 +347,27 @@ namespace HollowKnightSaveParser.ViewModels
                 OnPropertyChanged(nameof(FileCountText));
             };
 
-
-            // 监听游戏切换
+            // 监听属性变化
             PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(SelectedGameIndex))
                 {
                     OnGameChanged();
+                    SaveSettings(); // 保存游戏选择
                 }
                 else if (e.PropertyName == nameof(SelectedSteamUser))
                 {
                     OnSteamUserChanged();
+                    SaveSettings(); // 保存 Steam 用户选择
                 }
                 else if (e.PropertyName == nameof(SelectedSteamId))
                 {
                     OnSteamIdChanged();
+                    SaveSettings(); // 保存 Steam ID 选择
+                }
+                else if (e.PropertyName == nameof(CurrentLanguage))
+                {
+                    SaveSettings(); // 保存语言设置
                 }
             };
 
@@ -271,9 +376,15 @@ namespace HollowKnightSaveParser.ViewModels
 
         private async void InitializeAsync()
         {
-            await RefreshSteamUsersAsync();
+            if (SelectedGameIndex == 1) // 如果是丝之歌模式
+            {
+                await RefreshSteamUsersAsync(); // 先加载Steam用户
+                await LoadAvailableSteamIds(); // 再加载Steam ID
+            }
+
             await LoadSaveFilesAsync();
         }
+
 
         partial void OnIsLoadingChanged(bool value)
         {
@@ -288,25 +399,39 @@ namespace HollowKnightSaveParser.ViewModels
             OnPropertyChanged(nameof(FileCountText));
         }
 
-
         private void OnGameChanged()
         {
-            IsSilksongMode = SelectedGameIndex == 1;
-
             if (SelectedGameIndex == 1) // 丝之歌
             {
-                _ = RefreshSteamUsersAsync();
-                _ = LoadAvailableSteamIds();
+                // 先清空，避免显示旧数据
+                AvailableSteamIds.Clear();
+                SteamUsers.Clear();
+                SelectedSteamId = null;
+                SelectedSteamUser = null;
+
+                // 按顺序执行异步操作
+                _ = Task.Run(async () =>
+                {
+                    await RefreshSteamUsersAsync(); // 先加载Steam用户
+                    await LoadAvailableSteamIds(); // 再加载Steam ID
+                });
             }
             else // 空洞骑士
             {
                 AvailableSteamIds.Clear();
                 SelectedSteamId = null;
+                SelectedSteamUser = null;
                 InitializeSaveDirectory();
                 _ = LoadSaveFilesAsync();
             }
         }
-
+        
+        partial void OnSelectedGameIndexChanged(int value)
+        {
+            OnPropertyChanged(nameof(IsSilksongMode)); // 通知 IsSilksongMode 属性变化
+            OnGameChanged();
+        }
+        
         private void OnSteamUserChanged()
         {
             if (SelectedGameIndex == 1 && SelectedSteamUser != null) // 丝之歌
@@ -349,8 +474,6 @@ namespace HollowKnightSaveParser.ViewModels
 
             try
             {
-                SteamUsers.Clear();
-
                 var silksongBasePath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "..", "LocalLow", "Team Cherry", "Hollow Knight Silksong");
@@ -358,6 +481,11 @@ namespace HollowKnightSaveParser.ViewModels
 
                 if (!Directory.Exists(silksongBasePath))
                 {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        SteamUsers.Clear();
+                        SelectedSteamUser = null;
+                    });
                     ShowStatus(GetString("Info"), GetString("SilksongSaveDirectoryNotFound"), InfoBarSeverity.Warning);
                     return;
                 }
@@ -366,6 +494,7 @@ namespace HollowKnightSaveParser.ViewModels
                     .Where(dir => Regex.IsMatch(Path.GetFileName(dir), @"^\d+$"))
                     .ToArray();
 
+                var steamUsers = new List<SteamUser>();
                 foreach (var userDir in userDirectories)
                 {
                     var userId = Path.GetFileName(userDir);
@@ -375,14 +504,42 @@ namespace HollowKnightSaveParser.ViewModels
                         DisplayName = string.Format(GetString("SteamUserFormat"), userId),
                         FolderPath = userDir
                     };
-                    SteamUsers.Add(steamUser);
+                    steamUsers.Add(steamUser);
                 }
 
-                if (SteamUsers.Count > 0)
+                // 在主线程更新UI
+                App.Current.Dispatcher.Invoke(() =>
                 {
-                    SelectedSteamUser = SteamUsers.First();
+                    SteamUsers.Clear();
+                    foreach (var user in steamUsers)
+                    {
+                        SteamUsers.Add(user);
+                    }
+
+                    if (SteamUsers.Count > 0)
+                    {
+                        // 尝试恢复之前选择的 Steam 用户
+                        var lastSelectedUserId = Properties.Settings.Default.LastSelectedSteamUserId;
+                        if (!string.IsNullOrEmpty(lastSelectedUserId))
+                        {
+                            var previousUser = SteamUsers.FirstOrDefault(u => u.UserId == lastSelectedUserId);
+                            SelectedSteamUser = previousUser ?? SteamUsers.First();
+                        }
+                        else
+                        {
+                            SelectedSteamUser = SteamUsers.First();
+                        }
+                    }
+                    else
+                    {
+                        SelectedSteamUser = null;
+                    }
+                });
+
+                if (steamUsers.Count > 0)
+                {
                     ShowStatus(GetString("Success"),
-                        string.Format(GetString("FoundSteamUsersFormat"), SteamUsers.Count), InfoBarSeverity.Success);
+                        string.Format(GetString("FoundSteamUsersFormat"), steamUsers.Count), InfoBarSeverity.Success);
                 }
                 else
                 {
@@ -391,10 +548,16 @@ namespace HollowKnightSaveParser.ViewModels
             }
             catch (Exception ex)
             {
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    SteamUsers.Clear();
+                    SelectedSteamUser = null;
+                });
                 ShowStatus(GetString("Error"), string.Format(GetString("RefreshSteamUsersErrorFormat"), ex.Message),
                     InfoBarSeverity.Error);
             }
         }
+
 
         private (string Title, string Detail) GetBackupCompleteMessage(string baseDetail)
         {
