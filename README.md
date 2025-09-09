@@ -1,6 +1,6 @@
 # HollowKnightSaveParser
 
-<img src="Resources/HollowKnightSaveParser - 1.1.0.png" alt="HollowKnightSaveParser" width="600">
+<img src="Assets/HollowKnightSaveParser - 1.1.0.png" alt="HollowKnightSaveParser" width="600">
 
 [中文](#中文) | [English](#english)
 
