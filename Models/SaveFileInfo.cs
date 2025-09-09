@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace HollowKnightSaveParser.Models
 {
-    public class SaveFileInfo
+    public class SaveFileInfo : ObservableObject
     {
         public int SlotNumber { get; set; }
         public string BaseName { get; set; } = string.Empty;
@@ -35,6 +37,19 @@ namespace HollowKnightSaveParser.Models
                     f.Contains("backup") ||
                     Regex.IsMatch(f, @"user\d+_[\d\.]+\.(dat|json)$"));
             }
+        }
+
+        // 添加一个方法来刷新所有本地化属性
+        public void RefreshLocalizedProperties()
+        {
+            OnPropertyChanged(nameof(FileStatusText));
+            OnPropertyChanged(nameof(FileTypeDisplayText));
+            OnPropertyChanged(nameof(DetailedFileInfo));
+            OnPropertyChanged(nameof(DetailedFileTypeInfo));
+            OnPropertyChanged(nameof(FormattedLastModified));
+            OnPropertyChanged(nameof(DatToJsonButtonText));
+            OnPropertyChanged(nameof(JsonToDatButtonText));
+            OnPropertyChanged(nameof(ToolTipText));
         }
 
         // 显示的文件名 - 显示实际的文件名
@@ -107,18 +122,31 @@ namespace HollowKnightSaveParser.Models
             }
         }
 
+        // 获取本地化字符串的辅助方法
+        private static string GetString(string key)
+        {
+            try
+            {
+                return Application.Current.FindResource(key) as string ?? key;
+            }
+            catch
+            {
+                return key;
+            }
+        }
+
         public string FileStatusText
         {
             get
             {
                 if (HasDatFile && HasJsonFile)
-                    return "DAT + JSON";
+                    return GetString("DatPlusJson");
                 else if (HasDatFile)
-                    return "DAT";
+                    return GetString("DatOnly");
                 else if (HasJsonFile)
-                    return "JSON";
+                    return GetString("JsonOnly");
                 else
-                    return "错误";
+                    return GetString("Error");
             }
         }
 
@@ -128,13 +156,13 @@ namespace HollowKnightSaveParser.Models
             get
             {
                 if (HasDatFile && HasJsonFile)
-                    return "存档文件 (双格式)";
+                    return GetString("SaveFileDoubleFormat");
                 else if (HasDatFile)
-                    return "存档文件 (二进制)";
+                    return GetString("SaveFileBinary");
                 else if (HasJsonFile)
-                    return "存档文件 (JSON)";
+                    return GetString("SaveFileJson");
                 else
-                    return "未知格式";
+                    return GetString("Error");
             }
         }
 
@@ -159,13 +187,13 @@ namespace HollowKnightSaveParser.Models
 
                 if (BackupCount > 0)
                 {
-                    info.Add($"备份: {BackupCount}个");
+                    info.Add($"{GetString("Backup")}: {BackupCount}{GetString("Count")}");
                 }
 
                 if (RelatedFiles.Count > BackupCount)
                 {
                     var otherCount = RelatedFiles.Count - BackupCount;
-                    info.Add($"其他: {otherCount}个");
+                    info.Add($"{GetString("Other")}: {otherCount}{GetString("Count")}");
                 }
 
                 return string.Join(" | ", info);
@@ -182,18 +210,19 @@ namespace HollowKnightSaveParser.Models
 
                 if (HasDatFile || HasJsonFile)
                 {
-                    info.Add($"存档: {(HasDatFile && HasJsonFile ? "DAT+JSON" : HasDatFile ? "DAT" : "JSON")}");
+                    var saveType = HasDatFile && HasJsonFile ? "DAT+JSON" : HasDatFile ? "DAT" : "JSON";
+                    info.Add($"{GetString("SaveFile")}: {saveType}");
                 }
 
                 if (categories["mod"].Count > 0)
                 {
                     var modFiles = string.Join(", ", categories["mod"]);
-                    info.Add($"Mod数据: {modFiles}");
+                    info.Add($"{GetString("ModData")}: {modFiles}");
                 }
 
                 if (categories["backup"].Count > 0)
                 {
-                    info.Add($"备份文件: {categories["backup"].Count}个");
+                    info.Add($"{GetString("BackupFiles")}: {categories["backup"].Count}{GetString("Count")}");
                 }
 
                 return string.Join(" | ", info);
@@ -245,15 +274,15 @@ namespace HollowKnightSaveParser.Models
 
         // 格式化的修改时间
         public string FormattedLastModified => LastModified == DateTime.MinValue
-            ? "未知"
+            ? GetString("Unknown")
             : LastModified.ToString("yyyy-MM-dd HH:mm:ss");
 
         // 转换按钮状态
         public bool CanConvertToJson => HasDatFile;
         public bool CanConvertToDat => HasJsonFile;
 
-        public string DatToJsonButtonText => HasJsonFile ? "更新JSON" : "转为JSON";
-        public string JsonToDatButtonText => HasDatFile ? "更新DAT" : "转为DAT";
+        public string DatToJsonButtonText => HasJsonFile ? GetString("UpdateJson") : GetString("ConvertToJson");
+        public string JsonToDatButtonText => HasDatFile ? GetString("UpdateDat") : GetString("ConvertToDat");
 
         // 工具提示信息
         public string ToolTipText
@@ -262,23 +291,23 @@ namespace HollowKnightSaveParser.Models
             {
                 var tooltip = new List<string>
                 {
-                    $"槽位: {SlotNumber}",
-                    $"状态: {FileStatusText}",
-                    $"大小: {FormattedFileSize}",
-                    $"修改: {FormattedLastModified}"
+                    $"{GetString("Slot")}: {SlotNumber}",
+                    $"{GetString("Status")}: {FileStatusText}",
+                    $"{GetString("Size")}: {FormattedFileSize}",
+                    $"{GetString("Modified")}: {FormattedLastModified}"
                 };
 
                 if (HasDatFile)
-                    tooltip.Add($"DAT文件: {Path.GetFileName(DatFilePath)}");
+                    tooltip.Add($"{GetString("DatFile")}: {Path.GetFileName(DatFilePath)}");
 
                 if (HasJsonFile)
-                    tooltip.Add($"JSON文件: {Path.GetFileName(JsonFilePath)}");
+                    tooltip.Add($"{GetString("JsonFile")}: {Path.GetFileName(JsonFilePath)}");
 
                 var categories = CategorizedRelatedFiles;
 
                 if (categories["mod"].Count > 0)
                 {
-                    tooltip.Add($"Mod数据文件:");
+                    tooltip.Add($"{GetString("ModDataFiles")}:");
                     foreach (var modFile in categories["mod"])
                     {
                         tooltip.Add($"  • {modFile}");
@@ -287,12 +316,12 @@ namespace HollowKnightSaveParser.Models
 
                 if (categories["backup"].Count > 0)
                 {
-                    tooltip.Add($"备份文件: {string.Join(", ", categories["backup"])}");
+                    tooltip.Add($"{GetString("BackupFiles")}: {string.Join(", ", categories["backup"])}");
                 }
 
                 if (categories["other"].Count > 0)
                 {
-                    tooltip.Add($"其他文件: {string.Join(", ", categories["other"])}");
+                    tooltip.Add($"{GetString("OtherFiles")}: {string.Join(", ", categories["other"])}");
                 }
 
                 return string.Join("\n", tooltip);

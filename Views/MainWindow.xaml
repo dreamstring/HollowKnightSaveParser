@@ -5,7 +5,7 @@
                  xmlns:vm="clr-namespace:HollowKnightSaveParser.ViewModels"
                  xmlns:converters="clr-namespace:HollowKnightSaveParser.Converters"
                  ui:Design.Background="Black"
-                 Width="860" Height="742"
+                 Width="940" Height="742"
                  MinWidth="500" MinHeight="500"
                  WindowStartupLocation="CenterScreen"
                  ExtendsContentIntoTitleBar="True"
@@ -15,7 +15,7 @@
     <ui:FluentWindow.Resources>
         <converters:FileStatusToBrushConverter x:Key="FileStatusToBrushConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-
+        <converters:BoolToLanguageTextConverter x:Key="BoolToLanguageTextConverter" />
 
         <!-- 加载动画样式 -->
         <Style x:Key="LoadingRingStyle" TargetType="ui:ProgressRing">
@@ -24,7 +24,6 @@
             <Setter Property="Margin" Value="0,0,8,0" />
         </Style>
     </ui:FluentWindow.Resources>
-
 
     <ui:FluentWindow.DataContext>
         <vm:MainViewModel />
@@ -36,7 +35,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar x:Name="MainTitleBar" Grid.Row="0" Title="空洞骑士存档解析器">
+        <ui:TitleBar x:Name="MainTitleBar" Grid.Row="0" Title="{DynamicResource AppTitle}">
         </ui:TitleBar>
 
         <!-- 主要内容 -->
@@ -59,7 +58,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="空洞骑士存档解析器"
+                    <TextBlock Text="{DynamicResource AppTitle}"
                                FontSize="20" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                     <TextBlock Text="Hollow Knight Save Parser"
@@ -69,12 +68,22 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <ui:Button Content="刷新"
+                    <!-- 语言切换按钮 -->
+                    <ui:Button Command="{Binding ToggleLanguageCommand}"
+                               Appearance="Secondary"
+                               Height="36"
+                               Width="44"
+                               Margin="0,0,8,0"
+                               ToolTip="{DynamicResource ToggleLanguageTooltip}">
+                        <ui:SymbolIcon Symbol="Globe24" FontSize="18" />
+                    </ui:Button>
+
+
+                    <ui:Button Content="{DynamicResource Refresh}"
                                Command="{Binding LoadSaveFilesCommand}"
                                Appearance="Secondary"
                                Height="36"
-                               Margin="0,0,0
-                               ,0">
+                               Margin="0,0,0,0">
                         <ui:Button.Icon>
                             <ui:SymbolIcon Symbol="ArrowClockwise24" />
                         </ui:Button.Icon>
@@ -94,7 +103,7 @@
                             HorizontalAlignment="Left">
 
                     <ui:Button x:Name="HollowKnightButton"
-                               Content="初代"
+                               Content="{DynamicResource HollowKnight}"
                                Command="{Binding SelectGameCommand}"
                                CommandParameter="0"
                                Margin="0,0,8,0"
@@ -129,7 +138,7 @@
                     </ui:Button>
 
                     <ui:Button x:Name="SilksongButton"
-                               Content="丝之歌"
+                               Content="{DynamicResource Silksong}"
                                Command="{Binding SelectGameCommand}"
                                CommandParameter="1"
                                Padding="16,8">
@@ -169,7 +178,7 @@
                             VerticalAlignment="Center"
                             Visibility="{Binding IsSilksongMode, Converter={StaticResource BooleanToVisibilityConverter}}">
 
-                    <TextBlock Text="Steam ID:"
+                    <TextBlock Text="{DynamicResource SteamId}"
                                FontSize="12"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -189,7 +198,6 @@
                 </StackPanel>
             </Grid>
 
-
             <!-- 存档目录信息卡片 -->
             <ui:Card Grid.Row="2" Margin="0,0,0,20">
                 <Grid Margin="6,6">
@@ -205,7 +213,7 @@
                                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="存档目录"
+                        <TextBlock Text="{DynamicResource SaveDirectory}"
                                    FontWeight="Medium" FontSize="14"
                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                         <TextBlock Text="{Binding SaveDirectory}"
@@ -216,7 +224,7 @@
                     </StackPanel>
 
                     <ui:Button Grid.Column="2"
-                               Content="打开文件夹"
+                               Content="{DynamicResource OpenFolder}"
                                Command="{Binding OpenSaveDirectoryCommand}"
                                Appearance="Secondary"
                                FontSize="12"
@@ -238,31 +246,31 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="100" />
                         <ColumnDefinition Width="80" />
-                        <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="320" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="392" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Text="槽位"
+                    <TextBlock Grid.Column="0" Text="{DynamicResource SlotHeader}"
                                FontWeight="SemiBold" FontSize="12"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" Text="文件名"
+                    <TextBlock Grid.Column="1" Text="{DynamicResource FileNameHeader}"
                                FontWeight="SemiBold" FontSize="12"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="2" Text="状态"
+                    <TextBlock Grid.Column="2" Text="{DynamicResource StatusHeader}"
                                FontWeight="SemiBold" FontSize="12"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="3" Text="大小"
+                    <TextBlock Grid.Column="3" Text="{DynamicResource SizeHeader}"
                                FontWeight="SemiBold" FontSize="12"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="4" Text="修改时间"
+                    <TextBlock Grid.Column="4" Text="{DynamicResource ModifiedHeader}"
                                FontWeight="SemiBold" FontSize="12"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="5" Text="转换操作"
+                    <TextBlock Grid.Column="5" Text="{DynamicResource OperationsHeader}"
                                FontWeight="SemiBold" FontSize="12"
                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                VerticalAlignment="Center" />
@@ -306,8 +314,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="100" />
                                                 <ColumnDefinition Width="80" />
-                                                <ColumnDefinition Width="120" />
-                                                <ColumnDefinition Width="320" />
+                                                <ColumnDefinition Width="100" />
+                                                <ColumnDefinition Width="392" />
                                             </Grid.ColumnDefinitions>
 
                                             <!-- 槽位号 -->
@@ -326,7 +334,6 @@
                                                            FontSize="12"
                                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                                             </Border>
-
 
                                             <!-- 文件名 -->
                                             <StackPanel Grid.Column="1"
@@ -384,10 +391,11 @@
                                                            Height="30"
                                                            Width="90"
                                                            Margin="0,0,8,0"
-                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}">
+                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
+                                                           ToolTip="{Binding DatToJsonButtonText}">
                                                     <ui:Button.ContextMenu>
                                                         <ContextMenu>
-                                                            <MenuItem Header="删除 JSON 文件"
+                                                            <MenuItem Header="{DynamicResource DeleteJsonFile}"
                                                                       Command="{Binding PlacementTarget.Tag.DeleteJsonFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                       IsEnabled="{Binding HasJsonFile}">
@@ -419,10 +427,11 @@
                                                            Height="30"
                                                            Width="90"
                                                            Margin="0,0,8,0"
-                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}">
+                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
+                                                           ToolTip="{Binding JsonToDatButtonText}">
                                                     <ui:Button.ContextMenu>
                                                         <ContextMenu>
-                                                            <MenuItem Header="删除 DAT 文件"
+                                                            <MenuItem Header="{DynamicResource DeleteDatFile}"
                                                                       Command="{Binding PlacementTarget.Tag.DeleteDatFileCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                                       IsEnabled="{Binding HasDatFile}">
@@ -445,16 +454,17 @@
                                                     </ui:Button.Style>
                                                 </ui:Button>
 
+
                                                 <!-- 备份按钮 -->
-                                                <ui:Button Content="备份"
+                                                <ui:Button Content="{DynamicResource Backup}"
                                                            Command="{Binding DataContext.BackupSaveFileCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            CommandParameter="{Binding}"
                                                            IsEnabled="{Binding CanBackup}"
                                                            FontSize="11"
                                                            Height="30"
-                                                           Width="54"
+                                                           Width="90"
                                                            Margin="0,0,8,0"
-                                                           ToolTip="备份 DAT 文件">
+                                                           ToolTip="{DynamicResource BackupDatFile}">
                                                     <ui:Button.Style>
                                                         <Style TargetType="ui:Button"
                                                                BasedOn="{StaticResource {x:Type ui:Button}}">
@@ -469,15 +479,15 @@
                                                 </ui:Button>
 
                                                 <!-- 恢复按钮 -->
-                                                <ui:Button Content="恢复"
+                                                <ui:Button Content="{DynamicResource Restore}"
                                                            Command="{Binding DataContext.RestoreSaveFileCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            CommandParameter="{Binding}"
                                                            IsEnabled="{Binding CanRestore}"
                                                            FontSize="11"
                                                            Height="30"
-                                                           Width="54"
+                                                           Width="90"
                                                            Margin="0,0,8,0"
-                                                           ToolTip="从备份恢复">
+                                                           ToolTip="{DynamicResource RestoreFromBackup}">
                                                     <ui:Button.Style>
                                                         <Style TargetType="ui:Button"
                                                                BasedOn="{StaticResource {x:Type ui:Button}}">
@@ -508,13 +518,13 @@
                                        FontSize="64"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="0,0,0,20" />
-                        <TextBlock Text="未找到存档文件"
+                        <TextBlock Text="{DynamicResource NoSaveFilesFound}"
                                    FontSize="18"
                                    FontWeight="Medium"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,0,0,8" />
-                        <TextBlock Text="请确保游戏已创建存档文件，或检查存档目录是否正确"
+                        <TextBlock Text="{DynamicResource CheckSaveDirectory}"
                                    FontSize="13"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    HorizontalAlignment="Center"
@@ -528,7 +538,7 @@
                         <ui:ProgressRing IsIndeterminate="True"
                                          Width="48" Height="48"
                                          Margin="0,0,0,16" />
-                        <TextBlock Text="正在加载存档文件..."
+                        <TextBlock Text="{DynamicResource LoadingSaveFiles}"
                                    FontSize="14"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center" />
@@ -569,11 +579,6 @@
                                    FontSize="12"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    Margin="0,0,0,0" />
-                        <!-- 
-                        <TextBlock Text="就绪"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" /
-                        -->
                     </StackPanel>
                 </Grid>
             </Border>

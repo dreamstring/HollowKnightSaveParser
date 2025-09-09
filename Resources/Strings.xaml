@@ -1,0 +1,208 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- 状态消息 -->
+    <sys:String x:Key="Loading">加载中...</sys:String>
+    <sys:String x:Key="Success">成功</sys:String>
+    <sys:String x:Key="Error">错误</sys:String>
+    <sys:String x:Key="Warning">警告</sys:String>
+    <sys:String x:Key="Info">提示</sys:String>
+    <sys:String x:Key="LoadComplete">加载完成</sys:String>
+    <sys:String x:Key="BackupComplete">备份完成</sys:String>
+    <sys:String x:Key="RestoreComplete">恢复完成</sys:String>
+    <sys:String x:Key="ConvertComplete">转换完成</sys:String>
+    <sys:String x:Key="SaveDirNotFound">存档目录不存在</sys:String>
+    <sys:String x:Key="NoSaveFiles">未找到有效的存档文件</sys:String>
+    <sys:String x:Key="SelectSteamUser">请先选择 Steam 用户</sys:String>
+    <sys:String x:Key="Confirm">确认</sys:String>
+    <sys:String x:Key="Cancel">取消</sys:String>
+    <sys:String x:Key="Converting">转换中</sys:String>
+    <sys:String x:Key="Restoring">恢复中</sys:String>
+    <sys:String x:Key="RefreshComplete">刷新完成</sys:String>
+    <sys:String x:Key="DeleteComplete">删除完成</sys:String>
+    <sys:String x:Key="BackupFailed">备份失败</sys:String>
+    <sys:String x:Key="RestoreFailed">恢复失败</sys:String>
+    <sys:String x:Key="ConvertFailed">转换失败</sys:String>
+    <sys:String x:Key="DeleteFailed">删除失败</sys:String>
+    <sys:String x:Key="LoadFailed">加载失败</sys:String>
+    <sys:String x:Key="OpenFailed">打开失败</sys:String>
+
+    <!-- 界面文本 -->
+    <sys:String x:Key="AppTitle">空洞骑士存档解析器</sys:String>
+    <sys:String x:Key="Refresh">刷新</sys:String>
+    <sys:String x:Key="SaveDirectory">存档目录</sys:String>
+    <sys:String x:Key="OpenFolder">打开文件夹</sys:String>
+    <sys:String x:Key="NoSaveFilesFound">未找到存档文件</sys:String>
+    <sys:String x:Key="CheckSaveDirectory">请确保游戏已创建存档文件，或检查存档目录是否正确</sys:String>
+    <sys:String x:Key="LoadingSaveFiles">正在加载存档文件...</sys:String>
+
+    <!-- 游戏选择 -->
+    <sys:String x:Key="HollowKnight">空洞骑士</sys:String>
+    <sys:String x:Key="Silksong">丝之歌</sys:String>
+    <sys:String x:Key="SteamId">Steam ID:</sys:String>
+
+    <!-- 表头 -->
+    <sys:String x:Key="SlotHeader">槽位</sys:String>
+    <sys:String x:Key="FileNameHeader">文件名</sys:String>
+    <sys:String x:Key="StatusHeader">状态</sys:String>
+    <sys:String x:Key="SizeHeader">大小</sys:String>
+    <sys:String x:Key="ModifiedHeader">修改时间</sys:String>
+    <sys:String x:Key="OperationsHeader">转换操作</sys:String>
+
+    <!-- 按钮文本 -->
+    <sys:String x:Key="Backup">备份</sys:String>
+    <sys:String x:Key="Restore">恢复</sys:String>
+    <sys:String x:Key="BackupDatFile">备份 DAT 文件</sys:String>
+    <sys:String x:Key="RestoreFromBackup">从备份恢复</sys:String>
+    <sys:String x:Key="DeleteJsonFile">删除 JSON 文件</sys:String>
+    <sys:String x:Key="DeleteDatFile">删除 DAT 文件</sys:String>
+
+    <!-- 工具提示 -->
+    <sys:String x:Key="ToggleLanguageTooltip">切换语言 / Switch Language</sys:String>
+
+    <!-- 文件状态 -->
+    <sys:String x:Key="DatPlusJson">DAT + JSON</sys:String>
+    <sys:String x:Key="DatOnly">DAT</sys:String>
+    <sys:String x:Key="JsonOnly">JSON</sys:String>
+
+    <!-- 文件类型描述 -->
+    <sys:String x:Key="SaveFileDoubleFormat">存档文件(双格式)</sys:String>
+    <sys:String x:Key="SaveFileBinary">存档文件(二进制)</sys:String>
+    <sys:String x:Key="SaveFileJson">存档文件(JSON)</sys:String>
+
+    <!-- 按钮文本 -->
+    <sys:String x:Key="UpdateJson">更新JSON</sys:String>
+    <sys:String x:Key="UpdateDat">更新DAT</sys:String>
+    <sys:String x:Key="ConvertToJson">转为JSON</sys:String>
+    <sys:String x:Key="ConvertToDat">转为DAT</sys:String>
+    <sys:String x:Key="Back">备份</sys:String>
+    <sys:String x:Key="Rest">恢复</sys:String>
+
+    <!-- 对话框 -->
+    <sys:String x:Key="ConfirmRestore">确认恢复</sys:String>
+    <sys:String x:Key="ConfirmDelete">确认删除</sys:String>
+    <sys:String x:Key="RestoreConfirmMessage">
+        确定要从备份恢复 {0} 吗？
+
+        备份文件: {1}
+        当前存档将被覆盖，此操作不可撤销！
+    </sys:String>
+    <sys:String x:Key="DeleteDatConfirmMessage">
+        确定要删除 {0} 的 DAT 文件吗？
+
+        文件路径: {1}
+        此操作不可撤销！
+    </sys:String>
+    <sys:String x:Key="DeleteJsonConfirmMessage">
+        确定要删除 {0} 的 JSON 文件吗？
+
+        文件路径: {1}
+        此操作不可撤销！
+    </sys:String>
+
+    <!-- 详细状态信息 -->
+    <sys:String x:Key="FoundSlots">找到 {0} 个存档槽位</sys:String>
+    <sys:String x:Key="FoundBackups">检测到 {0} 个备份文件</sys:String>
+    <sys:String x:Key="ContainsModData">{0} 个存档含Mod数据</sys:String>
+    <sys:String x:Key="ContainsDatAndJson">包含 {0} 个DAT和 {1} 个JSON</sys:String>
+    <sys:String x:Key="JsonFormat">{0} 个为JSON格式</sys:String>
+    <sys:String x:Key="DatFormat">{0} 个为DAT格式</sys:String>
+
+    <!-- 操作详情 -->
+    <sys:String x:Key="BackupCompleteDetail">已将 {0} 备份为 {1}</sys:String>
+    <sys:String x:Key="RestoreCompleteDetail">已从 {0} 恢复到 {1}</sys:String>
+    <sys:String x:Key="ConvertCompleteDetail">已将 {0} 转换为 {1}</sys:String>
+    <sys:String x:Key="DeleteCompleteDetail">已删除 {0}</sys:String>
+    <sys:String x:Key="DatToJsonConverted">DAT已转换为JSON</sys:String>
+    <sys:String x:Key="JsonToDatConverted">JSON已转换为DAT</sys:String>
+    <sys:String x:Key="DatFileDeleted">DAT文件已删除</sys:String>
+    <sys:String x:Key="JsonFileDeleted">JSON文件已删除</sys:String>
+
+    <!-- Steam 相关 -->
+    <sys:String x:Key="SteamUser">Steam 用户 {0}</sys:String>
+    <sys:String x:Key="SilksongSaveDirectoryNotFound">未找到丝之歌存档目录</sys:String>
+    <sys:String x:Key="NoSteamUserDirectory">未找到 Steam 用户目录</sys:String>
+    <sys:String x:Key="FoundSteamUsers">找到 {0} 个 Steam 用户</sys:String>
+    <sys:String x:Key="LoadSteamIdsFailed">加载 Steam ID 失败: {0}</sys:String>
+    <sys:String x:Key="RefreshSteamUsersFailed">刷新 Steam 用户时出错: {0}</sys:String>
+
+    <!-- 转换状态文本 -->
+    <sys:String x:Key="ConvertingToJson">正在将 {0} 转换为 JSON...</sys:String>
+    <sys:String x:Key="ConvertingToDat">正在将 {0} 转换为 DAT...</sys:String>
+    <sys:String x:Key="BackingUp">正在备份 {0}...</sys:String>
+    <sys:String x:Key="RestoringFrom">正在恢复 {0}...</sys:String>
+
+    <!-- 格式化字符串 -->
+    <sys:String x:Key="FileCountFormat">找到 {0} 个存档槽位</sys:String>
+    <sys:String x:Key="LoadSteamIdFailedFormat">加载 Steam ID 失败: {0}</sys:String>
+    <sys:String x:Key="RefreshSteamUsersErrorFormat">刷新 Steam 用户时出错: {0}</sys:String>
+    <sys:String x:Key="FoundSteamUsersFormat">找到 {0} 个 Steam 用户</sys:String>
+    <sys:String x:Key="SteamUserFormat">Steam 用户 {0}</sys:String>
+    <sys:String x:Key="BackupCompleteDetailFormat">{0}，已将 {1} 备份为 {2}</sys:String>
+    <sys:String x:Key="BackupCompleteGenericFormat">{0}，备份操作已生效</sys:String>
+    <sys:String x:Key="RestoreCompleteDetailFormat">{0}，已从 {1} 恢复到 {2}</sys:String>
+    <sys:String x:Key="RestoreCompleteGenericFormat">{0}，存档已从备份恢复</sys:String>
+    <sys:String x:Key="BackupFilesDetectedFormat">检测到 {0} 个备份文件</sys:String>
+    <sys:String x:Key="ModdedSavesFormat">{0} 个存档含Mod数据</sys:String>
+    <sys:String x:Key="DatJsonCountFormat">包含 {0} 个DAT和 {1} 个JSON</sys:String>
+    <sys:String x:Key="JsonOnlyFormat">{0} 个为JSON格式</sys:String>
+    <sys:String x:Key="DatOnlyFormat">{0} 个为DAT格式</sys:String>
+    <sys:String x:Key="ConvertCompleteDetailFormat">{0}，已将 {1} 转换为 {2}</sys:String>
+    <sys:String x:Key="DeleteCompleteDetailFormat">{0}，已删除 {1}</sys:String>
+    <sys:String x:Key="FileTypeDeletedFormat">{0}，{1}文件已删除</sys:String>
+
+    <!-- 错误消息 -->
+    <sys:String x:Key="BackupErrorFormat">备份 {0} 时出错: {1}</sys:String>
+    <sys:String x:Key="NoValidBackupFile">未找到有效的备份文件</sys:String>
+    <sys:String x:Key="RestoreErrorFormat">恢复 {0} 时出错: {1}</sys:String>
+    <sys:String x:Key="DeleteDatErrorFormat">删除 DAT 文件时出错: {0}</sys:String>
+    <sys:String x:Key="DeleteJsonErrorFormat">删除 JSON 文件时出错: {0}</sys:String>
+    <sys:String x:Key="ConvertErrorFormat">转换 {0} 时出错: {1}</sys:String>
+
+    <!-- 确认对话框 -->
+    <sys:String x:Key="ConfirmRestoreMessagePart1">
+        确定要从备份恢复 {0} 吗？
+
+    </sys:String>
+    <sys:String x:Key="BackupFileInfo">
+        备份文件: {0}
+    </sys:String>
+    <sys:String x:Key="RestoreWarning">当前存档将被覆盖，此操作不可撤销！</sys:String>
+    <sys:String x:Key="ConfirmDeleteDatMessagePart1">
+        确定要删除 {0} 的 DAT 文件吗？
+
+    </sys:String>
+    <sys:String x:Key="ConfirmDeleteJsonMessagePart1">
+        确定要删除 {0} 的 JSON 文件吗？
+
+    </sys:String>
+    <sys:String x:Key="FilePathInfo">
+        文件路径: {0}
+    </sys:String>
+    <sys:String x:Key="IrreversibleWarning">此操作不可撤销！</sys:String>
+
+    <!-- 进度消息 -->
+    <sys:String x:Key="RestoringFormat">正在恢复 {0}...</sys:String>
+    <sys:String x:Key="ConvertingToJsonFormat">正在将 {0} 转换为 JSON...</sys:String>
+    <sys:String x:Key="ConvertingToDatFormat">正在将 {0} 转换为 DAT...</sys:String>
+    
+    <!-- 其他-->
+    <sys:String x:Key="Count">个</sys:String>
+    <sys:String x:Key="Other">其他</sys:String>
+    <sys:String x:Key="SaveFile">存档</sys:String>
+    <sys:String x:Key="ModData">Mod数据</sys:String>
+    <sys:String x:Key="BackupFiles">备份文件</sys:String>
+    <sys:String x:Key="Unknown">未知</sys:String>
+    <sys:String x:Key="Slot">槽位</sys:String>
+    <sys:String x:Key="Status">状态</sys:String>
+    <sys:String x:Key="Size">大小</sys:String>
+    <sys:String x:Key="Modified">修改</sys:String>
+    <sys:String x:Key="DatFile">DAT文件</sys:String>
+    <sys:String x:Key="JsonFile">JSON文件</sys:String>
+    <sys:String x:Key="ModDataFiles">Mod数据文件</sys:String>
+    <sys:String x:Key="OtherFiles">其他文件</sys:String>
+    <sys:String x:Key="LanguageSwitched">语言切换成功</sys:String>
+
+    
+</ResourceDictionary>

@@ -52,10 +52,93 @@ namespace HollowKnightSaveParser.ViewModels
 
         [ObservableProperty] private string? _selectedSteamId;
 
+        [ObservableProperty] private bool _isEnglish = false;
+
         public bool HasFiles => SaveFiles.Count > 0;
         public bool HasNoFiles => !IsLoading && SaveFiles.Count == 0;
         public string SaveDirectory { get; private set; } = string.Empty;
-        public string FileCountText => $"找到 {SaveFiles.Count} 个存档槽位";
+        public string FileCountText => string.Format(GetString("FileCountFormat"), SaveFiles.Count);
+
+        private void LoadLanguageResources(string resourcePath)
+        {
+            try
+            {
+                // 移除所有现有的语言资源字典
+                var existingLanguageResources = Application.Current.Resources.MergedDictionaries
+                    .Where(d => d.Source?.OriginalString?.Contains("Strings") == true)
+                    .ToList();
+
+                foreach (var resource in existingLanguageResources)
+                {
+                    Application.Current.Resources.MergedDictionaries.Remove(resource);
+                }
+
+                // 创建新的资源字典
+                var newLanguageDict = new ResourceDictionary
+                {
+                    Source = new Uri(resourcePath, UriKind.Relative)
+                };
+
+                // 添加新的语言资源到应用程序资源
+                Application.Current.Resources.MergedDictionaries.Add(newLanguageDict);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to load language resources from {resourcePath}", ex);
+            }
+        }
+
+        [RelayCommand]
+        private void ToggleLanguage()
+        {
+            try
+            {
+                // 获取当前的语言资源
+                var currentLang = Application.Current.Resources.MergedDictionaries
+                    .FirstOrDefault(d => d.Source?.OriginalString?.Contains("Strings") == true);
+
+                // 判断当前语言并切换
+                if (currentLang?.Source?.OriginalString?.Contains("en") == true)
+                {
+                    // 当前是英文，切换到中文
+                    LoadLanguageResources("Resources/Strings.xaml");
+                    IsEnglish = false;
+                }
+                else
+                {
+                    // 当前是中文或未设置，切换到英文
+                    LoadLanguageResources("Resources/Strings.en.xaml");
+                    IsEnglish = true;
+                }
+
+                // 刷新 MainViewModel 的本地化属性
+                OnPropertyChanged(nameof(StatusMessage));
+                OnPropertyChanged(nameof(FileCountText));
+
+                // 刷新存档文件列表中的所有本地化文本
+                foreach (var saveFile in SaveFiles)
+                {
+                    // 如果 SaveFileInfo 继承了 ObservableObject，使用这个方法
+                    saveFile.RefreshLocalizedProperties();
+                }
+
+                // 触发整个列表的刷新（确保UI完全更新）
+                OnPropertyChanged(nameof(SaveFiles));
+
+                // 显示成功消息
+                ShowStatus(GetString("Success"), GetString("LanguageSwitched"), InfoBarSeverity.Success);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus(GetString("Error"), $"Language switch failed: {ex.Message}", InfoBarSeverity.Error);
+            }
+        }
+
+        // 获取本地化字符串的辅助方法
+        private string GetString(string key)
+        {
+            return Application.Current.Resources[key] as string ?? key;
+        }
 
         // Steam ID 变化处理
         private void OnSteamIdChanged()
@@ -86,7 +169,7 @@ namespace HollowKnightSaveParser.ViewModels
                 if (!Directory.Exists(silksongBasePath))
                 {
                     AvailableSteamIds.Clear();
-                    ShowStatus("提示", "未找到丝之歌存档目录", InfoBarSeverity.Warning);
+                    ShowStatus(GetString("Info"), GetString("SilksongSaveDirectoryNotFound"), InfoBarSeverity.Warning);
                     return;
                 }
 
@@ -109,12 +192,13 @@ namespace HollowKnightSaveParser.ViewModels
                 }
                 else if (AvailableSteamIds.Count == 0)
                 {
-                    ShowStatus("提示", "未找到 Steam 用户目录", InfoBarSeverity.Warning);
+                    ShowStatus(GetString("Info"), GetString("NoSteamUserDirectory"), InfoBarSeverity.Warning);
                 }
             }
             catch (Exception ex)
             {
-                ShowStatus("错误", $"加载 Steam ID 失败: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("Error"), string.Format(GetString("LoadSteamIdFailedFormat"), ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -133,7 +217,7 @@ namespace HollowKnightSaveParser.ViewModels
             var index = int.Parse(gameIndex);
             SelectedGameIndex = index;
             IsSilksongMode = index == 1;
-    
+
             if (IsSilksongMode)
             {
                 await LoadAvailableSteamIds();
@@ -146,7 +230,7 @@ namespace HollowKnightSaveParser.ViewModels
                 await LoadSaveFilesAsync();
             }
         }
-        
+
         public void SetLastOperation(string operation, Dictionary<string, object> details)
         {
             LastOperation = operation;
@@ -274,7 +358,7 @@ namespace HollowKnightSaveParser.ViewModels
 
                 if (!Directory.Exists(silksongBasePath))
                 {
-                    ShowStatus("提示", "未找到丝之歌存档目录", InfoBarSeverity.Warning);
+                    ShowStatus(GetString("Info"), GetString("SilksongSaveDirectoryNotFound"), InfoBarSeverity.Warning);
                     return;
                 }
 
@@ -288,7 +372,7 @@ namespace HollowKnightSaveParser.ViewModels
                     var steamUser = new SteamUser
                     {
                         UserId = userId,
-                        DisplayName = $"Steam 用户 {userId}",
+                        DisplayName = string.Format(GetString("SteamUserFormat"), userId),
                         FolderPath = userDir
                     };
                     SteamUsers.Add(steamUser);
@@ -297,16 +381,18 @@ namespace HollowKnightSaveParser.ViewModels
                 if (SteamUsers.Count > 0)
                 {
                     SelectedSteamUser = SteamUsers.First();
-                    ShowStatus("成功", $"找到 {SteamUsers.Count} 个 Steam 用户", InfoBarSeverity.Success);
+                    ShowStatus(GetString("Success"),
+                        string.Format(GetString("FoundSteamUsersFormat"), SteamUsers.Count), InfoBarSeverity.Success);
                 }
                 else
                 {
-                    ShowStatus("提示", "未找到 Steam 用户目录", InfoBarSeverity.Warning);
+                    ShowStatus(GetString("Info"), GetString("NoSteamUserDirectory"), InfoBarSeverity.Warning);
                 }
             }
             catch (Exception ex)
             {
-                ShowStatus("错误", $"刷新 Steam 用户时出错: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("Error"), string.Format(GetString("RefreshSteamUsersErrorFormat"), ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -318,10 +404,11 @@ namespace HollowKnightSaveParser.ViewModels
                 var sourceFile = sourceObj.ToString();
                 var backupFile = Path.GetFileName(backupObj.ToString());
 
-                return ("备份完成", $"{baseDetail}，已将 {sourceFile} 备份为 {backupFile}");
+                return (GetString("BackupComplete"),
+                    string.Format(GetString("BackupCompleteDetailFormat"), baseDetail, sourceFile, backupFile));
             }
 
-            return ("备份完成", $"{baseDetail}，备份操作已生效");
+            return (GetString("BackupComplete"), string.Format(GetString("BackupCompleteGenericFormat"), baseDetail));
         }
 
         private (string Title, string Detail) GetRestoreCompleteMessage(string baseDetail)
@@ -332,10 +419,11 @@ namespace HollowKnightSaveParser.ViewModels
                 var backupFile = Path.GetFileName(backupObj.ToString());
                 var targetFile = targetObj.ToString();
 
-                return ("恢复完成", $"{baseDetail}，已从 {backupFile} 恢复到 {targetFile}");
+                return (GetString("RestoreComplete"),
+                    string.Format(GetString("RestoreCompleteDetailFormat"), baseDetail, backupFile, targetFile));
             }
 
-            return ("恢复完成", $"{baseDetail}，存档已从备份恢复");
+            return (GetString("RestoreComplete"), string.Format(GetString("RestoreCompleteGenericFormat"), baseDetail));
         }
 
         [RelayCommand]
@@ -352,13 +440,13 @@ namespace HollowKnightSaveParser.ViewModels
                 }
                 else if (SelectedGameIndex == 1 && SelectedSteamUser == null) // 丝之歌但未选择用户
                 {
-                    ShowStatus("提示", "请先选择 Steam 用户", InfoBarSeverity.Warning);
+                    ShowStatus(GetString("Info"), GetString("SelectSteamUser"), InfoBarSeverity.Warning);
                     return;
                 }
 
                 if (!Directory.Exists(SaveDirectory))
                 {
-                    ShowStatus("错误", "存档目录不存在", InfoBarSeverity.Error);
+                    ShowStatus(GetString("Error"), GetString("SaveDirNotFound"), InfoBarSeverity.Error);
                     return;
                 }
 
@@ -384,12 +472,12 @@ namespace HollowKnightSaveParser.ViewModels
                 }
                 else
                 {
-                    ShowStatus("提示", "未找到有效的存档文件", InfoBarSeverity.Warning);
+                    ShowStatus(GetString("Info"), GetString("NoSaveFiles"), InfoBarSeverity.Warning);
                 }
             }
             catch (Exception ex)
             {
-                ShowStatus("加载失败", ex.Message, InfoBarSeverity.Error);
+                ShowStatus(GetString("LoadFailed"), ex.Message, InfoBarSeverity.Error);
             }
             finally
             {
@@ -400,7 +488,7 @@ namespace HollowKnightSaveParser.ViewModels
         private (string Title, string Detail) GetLoadCompleteMessage()
         {
             var fileCount = SaveFiles.Count;
-            var baseDetail = $"找到 {fileCount} 个存档槽位";
+            var baseDetail = string.Format(GetString("FileCountFormat"), fileCount);
 
             // 检查是否有最近操作（5秒内） - 使用属性而不是字段
             if (!string.IsNullOrEmpty(LastOperation) &&
@@ -414,7 +502,7 @@ namespace HollowKnightSaveParser.ViewModels
                     "convert_to_dat" => GetConvertCompleteMessage("DAT", baseDetail),
                     "delete_dat" => GetDeleteCompleteMessage("DAT", baseDetail),
                     "delete_json" => GetDeleteCompleteMessage("JSON", baseDetail),
-                    _ => ("刷新完成", baseDetail)
+                    _ => (GetString("RefreshComplete"), baseDetail)
                 };
             }
 
@@ -428,28 +516,28 @@ namespace HollowKnightSaveParser.ViewModels
 
             if (totalBackups > 0)
             {
-                details.Add($"检测到 {totalBackups} 个备份文件");
+                details.Add(string.Format(GetString("BackupFilesDetectedFormat"), totalBackups));
             }
 
             if (modCount > 0)
             {
-                details.Add($"{modCount} 个存档含Mod数据");
+                details.Add(string.Format(GetString("ModdedSavesFormat"), modCount));
             }
 
             if (jsonCount > 0 && datCount > 0)
             {
-                details.Add($"包含 {datCount} 个DAT和 {jsonCount} 个JSON");
+                details.Add(string.Format(GetString("DatJsonCountFormat"), datCount, jsonCount));
             }
             else if (jsonCount > 0)
             {
-                details.Add($"{jsonCount} 个为JSON格式");
+                details.Add(string.Format(GetString("JsonOnlyFormat"), jsonCount));
             }
             else if (datCount > 0)
             {
-                details.Add($"{datCount} 个为DAT格式");
+                details.Add(string.Format(GetString("DatOnlyFormat"), datCount));
             }
 
-            return ("加载完成", string.Join("，", details));
+            return (GetString("LoadComplete"), string.Join("，", details));
         }
 
         private (string Title, string Detail) GetConvertCompleteMessage(string targetFormat, string baseDetail)
@@ -460,10 +548,12 @@ namespace HollowKnightSaveParser.ViewModels
                 var sourceFile = sourceObj.ToString();
                 var targetFile = targetObj.ToString();
 
-                return ("转换完成", $"{baseDetail}，已将 {sourceFile} 转换为 {targetFile}");
+                return (GetString("ConvertComplete"),
+                    string.Format(GetString("ConvertCompleteDetailFormat"), baseDetail, sourceFile, targetFile));
             }
 
-            return ("转换完成", $"{baseDetail}，{(targetFormat == "JSON" ? "DAT已转换为JSON" : "JSON已转换为DAT")}");
+            return (GetString("ConvertComplete"),
+                $"{baseDetail}，{(targetFormat == "JSON" ? GetString("DatToJsonConverted") : GetString("JsonToDatConverted"))}");
         }
 
         private (string Title, string Detail) GetDeleteCompleteMessage(string fileType, string baseDetail)
@@ -471,10 +561,12 @@ namespace HollowKnightSaveParser.ViewModels
             if (LastOperationDetails.TryGetValue("deletedFile", out var deletedObj))
             {
                 var deletedFile = deletedObj.ToString();
-                return ("删除完成", $"{baseDetail}，已删除 {deletedFile}");
+                return (GetString("DeleteComplete"),
+                    string.Format(GetString("DeleteCompleteDetailFormat"), baseDetail, deletedFile));
             }
 
-            return ("删除完成", $"{baseDetail}，{fileType}文件已删除");
+            return (GetString("DeleteComplete"),
+                string.Format(GetString("FileTypeDeletedFormat"), baseDetail, fileType));
         }
 
         [RelayCommand]
@@ -502,7 +594,9 @@ namespace HollowKnightSaveParser.ViewModels
             }
             catch (Exception ex)
             {
-                ShowStatus("备份失败", $"备份 {saveFile.DisplayFileName} 时出错: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("BackupFailed"),
+                    string.Format(GetString("BackupErrorFormat"), saveFile.DisplayFileName, ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -516,20 +610,22 @@ namespace HollowKnightSaveParser.ViewModels
                 var backupPath = saveFile.LatestBackupFilePath;
                 if (string.IsNullOrEmpty(backupPath))
                 {
-                    ShowStatus("恢复失败", "未找到有效的备份文件", InfoBarSeverity.Error);
+                    ShowStatus(GetString("RestoreFailed"), GetString("NoValidBackupFile"), InfoBarSeverity.Error);
                     return;
                 }
 
                 // 弹出确认对话框
                 var result = await ShowConfirmationDialogAsync(
-                    "确认恢复",
-                    $"确定要从备份恢复 {saveFile.DisplayFileName} 吗？\n\n" +
-                    $"备份文件: {Path.GetFileName(backupPath)}\n" +
-                    $"当前存档将被覆盖，此操作不可撤销！");
+                    GetString("ConfirmRestore"),
+                    string.Format(GetString("ConfirmRestoreMessagePart1"), saveFile.DisplayFileName) +
+                    string.Format(GetString("BackupFileInfo"), Path.GetFileName(backupPath)) +
+                    GetString("RestoreWarning"));
 
                 if (!result) return;
 
-                ShowStatus("恢复中", $"正在恢复 {saveFile.DisplayFileName}...", InfoBarSeverity.Informational);
+                ShowStatus(GetString("Restoring"),
+                    string.Format(GetString("RestoringFormat"), saveFile.DisplayFileName),
+                    InfoBarSeverity.Informational);
 
                 // 确定目标文件路径
                 string targetPath;
@@ -560,7 +656,9 @@ namespace HollowKnightSaveParser.ViewModels
             }
             catch (Exception ex)
             {
-                ShowStatus("恢复失败", $"恢复 {saveFile.DisplayFileName} 时出错: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("RestoreFailed"),
+                    string.Format(GetString("RestoreErrorFormat"), saveFile.DisplayFileName, ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -573,10 +671,10 @@ namespace HollowKnightSaveParser.ViewModels
             try
             {
                 var result = await ShowConfirmationDialogAsync(
-                    "确认删除",
-                    $"确定要删除 {saveFile.DisplayFileName} 的 DAT 文件吗？\n\n" +
-                    $"文件路径: {saveFile.DatFilePath}\n" +
-                    $"此操作不可撤销！");
+                    GetString("ConfirmDelete"),
+                    string.Format(GetString("ConfirmDeleteDatMessagePart1"), saveFile.DisplayFileName) +
+                    string.Format(GetString("FilePathInfo"), saveFile.DatFilePath) +
+                    GetString("IrreversibleWarning"));
 
                 if (!result) return;
 
@@ -593,7 +691,8 @@ namespace HollowKnightSaveParser.ViewModels
             }
             catch (Exception ex)
             {
-                ShowStatus("删除失败", $"删除 DAT 文件时出错: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("DeleteFailed"), string.Format(GetString("DeleteDatErrorFormat"), ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -605,10 +704,10 @@ namespace HollowKnightSaveParser.ViewModels
             try
             {
                 var result = await ShowConfirmationDialogAsync(
-                    "确认删除",
-                    $"确定要删除 {saveFile.DisplayFileName} 的 JSON 文件吗？\n\n" +
-                    $"文件路径: {saveFile.JsonFilePath}\n" +
-                    $"此操作不可撤销！");
+                    GetString("ConfirmDelete"),
+                    string.Format(GetString("ConfirmDeleteJsonMessagePart1"), saveFile.DisplayFileName) +
+                    string.Format(GetString("FilePathInfo"), saveFile.JsonFilePath) +
+                    GetString("IrreversibleWarning"));
 
                 if (!result) return;
 
@@ -625,7 +724,8 @@ namespace HollowKnightSaveParser.ViewModels
             }
             catch (Exception ex)
             {
-                ShowStatus("删除失败", $"删除 JSON 文件时出错: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("DeleteFailed"), string.Format(GetString("DeleteJsonErrorFormat"), ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -637,8 +737,8 @@ namespace HollowKnightSaveParser.ViewModels
             {
                 Title = title,
                 Content = message,
-                PrimaryButtonText = "确认",
-                CloseButtonText = "取消", // 将关闭按钮改名为"取消"
+                PrimaryButtonText = GetString("Confirm"),
+                CloseButtonText = GetString("Cancel"), // 将关闭按钮改名为GetString("Cancel")
                 // 不设置 SecondaryButtonText，这样就只有两个按钮
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
@@ -716,7 +816,9 @@ namespace HollowKnightSaveParser.ViewModels
 
             try
             {
-                ShowStatus("转换中", $"正在将 {saveFile.DisplayFileName} 转换为 JSON...", InfoBarSeverity.Informational);
+                ShowStatus(GetString("Converting"),
+                    string.Format(GetString("ConvertingToJsonFormat"), saveFile.DisplayFileName),
+                    InfoBarSeverity.Informational);
 
                 var result = await _saveFileService.ConvertDatToJsonAsync(saveFile.DatFilePath!);
 
@@ -736,12 +838,14 @@ namespace HollowKnightSaveParser.ViewModels
                 }
                 else
                 {
-                    ShowStatus("转换失败", result.Message, InfoBarSeverity.Error);
+                    ShowStatus(GetString("ConvertFailed"), result.Message, InfoBarSeverity.Error);
                 }
             }
             catch (Exception ex)
             {
-                ShowStatus("转换失败", $"转换 {saveFile.DisplayFileName} 时出错: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("ConvertFailed"),
+                    string.Format(GetString("ConvertErrorFormat"), saveFile.DisplayFileName, ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -752,7 +856,9 @@ namespace HollowKnightSaveParser.ViewModels
 
             try
             {
-                ShowStatus("转换中", $"正在将 {saveFile.DisplayFileName} 转换为 DAT...", InfoBarSeverity.Informational);
+                ShowStatus(GetString("Converting"),
+                    string.Format(GetString("ConvertingToDatFormat"), saveFile.DisplayFileName),
+                    InfoBarSeverity.Informational);
 
                 var result = await _saveFileService.ConvertJsonToDatAsync(saveFile.JsonFilePath!);
 
@@ -772,12 +878,14 @@ namespace HollowKnightSaveParser.ViewModels
                 }
                 else
                 {
-                    ShowStatus("转换失败", result.Message, InfoBarSeverity.Error);
+                    ShowStatus(GetString("ConvertFailed"), result.Message, InfoBarSeverity.Error);
                 }
             }
             catch (Exception ex)
             {
-                ShowStatus("转换失败", $"转换 {saveFile.DisplayFileName} 时出错: {ex.Message}", InfoBarSeverity.Error);
+                ShowStatus(GetString("ConvertFailed"),
+                    string.Format(GetString("ConvertErrorFormat"), saveFile.DisplayFileName, ex.Message),
+                    InfoBarSeverity.Error);
             }
         }
 
@@ -797,23 +905,22 @@ namespace HollowKnightSaveParser.ViewModels
                 }
                 else
                 {
-                    ShowStatus("错误", "存档目录不存在", InfoBarSeverity.Error);
+                    ShowStatus(GetString("Error"), GetString("SaveDirNotFound"), InfoBarSeverity.Error);
                 }
             }
             catch (Exception ex)
             {
-                ShowStatus("打开失败", ex.Message, InfoBarSeverity.Error);
+                ShowStatus(GetString("OpenFailed"), ex.Message, InfoBarSeverity.Error);
             }
         }
 
-        private void ShowStatus(string message, string detail, InfoBarSeverity severity)
+        private void ShowStatus(string messageKey, string detail, InfoBarSeverity severity)
         {
-            StatusMessage = message;
-            StatusDetail = detail;
+            StatusMessage = GetString(messageKey);
+            StatusDetail = detail; // 详细信息可以保持动态生成
             StatusSeverity = severity;
             IsStatusVisible = true;
 
-            // 3秒后自动隐藏成功和信息提示
             if (severity == InfoBarSeverity.Success || severity == InfoBarSeverity.Informational)
             {
                 Task.Delay(3000).ContinueWith(_ => { App.Current.Dispatcher.Invoke(() => IsStatusVisible = false); });

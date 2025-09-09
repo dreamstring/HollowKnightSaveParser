@@ -1,0 +1,207 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Status Messages -->
+    <sys:String x:Key="Loading">Loading...</sys:String>
+    <sys:String x:Key="Success">Success</sys:String>
+    <sys:String x:Key="Error">Error</sys:String>
+    <sys:String x:Key="Warning">Warning</sys:String>
+    <sys:String x:Key="Info">Info</sys:String>
+    <sys:String x:Key="LoadComplete">Load Complete</sys:String>
+    <sys:String x:Key="BackupComplete">Backup Complete</sys:String>
+    <sys:String x:Key="RestoreComplete">Restore Complete</sys:String>
+    <sys:String x:Key="ConvertComplete">Convert Complete</sys:String>
+    <sys:String x:Key="SaveDirNotFound">Save directory not found</sys:String>
+    <sys:String x:Key="NoSaveFiles">No valid save files found</sys:String>
+    <sys:String x:Key="SelectSteamUser">Please select a Steam user first</sys:String>
+    <sys:String x:Key="Confirm">Confirm</sys:String>
+    <sys:String x:Key="Cancel">Cancel</sys:String>
+    <sys:String x:Key="Converting">Converting</sys:String>
+    <sys:String x:Key="Restoring">Restoring</sys:String>
+    <sys:String x:Key="RefreshComplete">Refresh Complete</sys:String>
+    <sys:String x:Key="DeleteComplete">Delete Complete</sys:String>
+    <sys:String x:Key="BackupFailed">Backup Failed</sys:String>
+    <sys:String x:Key="RestoreFailed">Restore Failed</sys:String>
+    <sys:String x:Key="ConvertFailed">Convert Failed</sys:String>
+    <sys:String x:Key="DeleteFailed">Delete Failed</sys:String>
+    <sys:String x:Key="LoadFailed">Load Failed</sys:String>
+    <sys:String x:Key="OpenFailed">Open Failed</sys:String>
+
+    <!-- UI Text -->
+    <sys:String x:Key="AppTitle">Hollow Knight Save Parser</sys:String>
+    <sys:String x:Key="Refresh">Refresh</sys:String>
+    <sys:String x:Key="SaveDirectory">Save Directory</sys:String>
+    <sys:String x:Key="OpenFolder">Open Folder</sys:String>
+    <sys:String x:Key="NoSaveFilesFound">No save files found</sys:String>
+    <sys:String x:Key="CheckSaveDirectory">Please ensure the game has created save files, or check if the save directory is correct</sys:String>
+    <sys:String x:Key="LoadingSaveFiles">Loading save files...</sys:String>
+
+    <!-- Game Selection -->
+    <sys:String x:Key="HollowKnight">HollowKnight</sys:String>
+    <sys:String x:Key="Silksong">Silksong</sys:String>
+    <sys:String x:Key="SteamId">Steam ID:</sys:String>
+
+    <!-- Table Headers -->
+    <sys:String x:Key="SlotHeader">Slot</sys:String>
+    <sys:String x:Key="FileNameHeader">File Name</sys:String>
+    <sys:String x:Key="StatusHeader">Status</sys:String>
+    <sys:String x:Key="SizeHeader">Size</sys:String>
+    <sys:String x:Key="ModifiedHeader">Modified</sys:String>
+    <sys:String x:Key="OperationsHeader">Convert Operations</sys:String>
+
+    <!-- Button Text -->
+    <sys:String x:Key="Backup">Backup</sys:String>
+    <sys:String x:Key="Restore">Restore</sys:String>
+    <sys:String x:Key="BackupDatFile">Backup DAT File</sys:String>
+    <sys:String x:Key="RestoreFromBackup">Restore from Backup</sys:String>
+    <sys:String x:Key="DeleteJsonFile">Delete JSON File</sys:String>
+    <sys:String x:Key="DeleteDatFile">Delete DAT File</sys:String>
+
+    <!-- Tooltips -->
+    <sys:String x:Key="ToggleLanguageTooltip">Toggle Language / 切换语言</sys:String>
+
+    <!-- File Status -->
+    <sys:String x:Key="DatPlusJson">DAT + JSON</sys:String>
+    <sys:String x:Key="DatOnly">DAT</sys:String>
+    <sys:String x:Key="JsonOnly">JSON</sys:String>
+
+    <!-- File Type Descriptions -->
+    <sys:String x:Key="SaveFileDoubleFormat">Save File (Dual Format)</sys:String>
+    <sys:String x:Key="SaveFileBinary">Save File (Binary)</sys:String>
+    <sys:String x:Key="SaveFileJson">Save File (JSON)</sys:String>
+
+    <!-- Button Text -->
+    <sys:String x:Key="UpdateJson">Update JSON</sys:String>
+    <sys:String x:Key="UpdateDat">Update DAT</sys:String>
+    <sys:String x:Key="ConvertToJson">Convert to JSON</sys:String>
+    <sys:String x:Key="ConvertToDat">Convert to DAT</sys:String>
+    <sys:String x:Key="Back">Backup</sys:String>
+    <sys:String x:Key="Rest">Restore</sys:String>
+
+    <!-- Dialogs -->
+    <sys:String x:Key="ConfirmRestore">Confirm Restore</sys:String>
+    <sys:String x:Key="ConfirmDelete">Confirm Delete</sys:String>
+    <sys:String x:Key="RestoreConfirmMessage">
+        Are you sure you want to restore {0} from backup?
+
+        Backup file: {1}
+        Current save will be overwritten, this action cannot be undone!
+    </sys:String>
+    <sys:String x:Key="DeleteDatConfirmMessage">
+        Are you sure you want to delete the DAT file for {0}?
+
+        File path: {1}
+        This action cannot be undone!
+    </sys:String>
+    <sys:String x:Key="DeleteJsonConfirmMessage">
+        Are you sure you want to delete the JSON file for {0}?
+
+        File path: {1}
+        This action cannot be undone!
+    </sys:String>
+
+    <!-- Detailed Status Info -->
+    <sys:String x:Key="FoundSlots">Found {0} save slots</sys:String>
+    <sys:String x:Key="FoundBackups">Detected {0} backup files</sys:String>
+    <sys:String x:Key="ContainsModData">{0} saves contain mod data</sys:String>
+    <sys:String x:Key="ContainsDatAndJson">Contains {0} DAT and {1} JSON files</sys:String>
+    <sys:String x:Key="JsonFormat">{0} in JSON format</sys:String>
+    <sys:String x:Key="DatFormat">{0} in DAT format</sys:String>
+
+    <!-- Operation Details -->
+    <sys:String x:Key="BackupCompleteDetail">Backed up {0} as {1}</sys:String>
+    <sys:String x:Key="RestoreCompleteDetail">Restored from {0} to {1}</sys:String>
+    <sys:String x:Key="ConvertCompleteDetail">Converted {0} to {1}</sys:String>
+    <sys:String x:Key="DeleteCompleteDetail">Deleted {0}</sys:String>
+    <sys:String x:Key="DatToJsonConverted">DAT converted to JSON</sys:String>
+    <sys:String x:Key="JsonToDatConverted">JSON converted to DAT</sys:String>
+    <sys:String x:Key="DatFileDeleted">DAT file deleted</sys:String>
+    <sys:String x:Key="JsonFileDeleted">JSON file deleted</sys:String>
+
+    <!-- Steam Related -->
+    <sys:String x:Key="SteamUser">Steam User {0}</sys:String>
+    <sys:String x:Key="SilksongSaveDirectoryNotFound">Silksong save directory not found</sys:String>
+    <sys:String x:Key="NoSteamUserDirectory">No Steam user directory found</sys:String>
+    <sys:String x:Key="FoundSteamUsers">Found {0} Steam users</sys:String>
+    <sys:String x:Key="LoadSteamIdsFailed">Failed to load Steam IDs: {0}</sys:String>
+    <sys:String x:Key="RefreshSteamUsersFailed">Error refreshing Steam users: {0}</sys:String>
+
+    <!-- Convert Status Text -->
+    <sys:String x:Key="ConvertingToJson">Converting {0} to JSON...</sys:String>
+    <sys:String x:Key="ConvertingToDat">Converting {0} to DAT...</sys:String>
+    <sys:String x:Key="BackingUp">Backing up {0}...</sys:String>
+    <sys:String x:Key="RestoringFrom">Restoring {0}...</sys:String>
+
+    <!-- Format Strings -->
+    <sys:String x:Key="FileCountFormat">Found {0} save slots</sys:String>
+    <sys:String x:Key="LoadSteamIdFailedFormat">Failed to load Steam IDs: {0}</sys:String>
+    <sys:String x:Key="RefreshSteamUsersErrorFormat">Error refreshing Steam users: {0}</sys:String>
+    <sys:String x:Key="FoundSteamUsersFormat">Found {0} Steam users</sys:String>
+    <sys:String x:Key="SteamUserFormat">Steam User {0}</sys:String>
+    <sys:String x:Key="BackupCompleteDetailFormat">{0}, backed up {1} as {2}</sys:String>
+    <sys:String x:Key="BackupCompleteGenericFormat">{0}, backup operation completed</sys:String>
+    <sys:String x:Key="RestoreCompleteDetailFormat">{0}, restored from {1} to {2}</sys:String>
+    <sys:String x:Key="RestoreCompleteGenericFormat">{0}, save restored from backup</sys:String>
+    <sys:String x:Key="BackupFilesDetectedFormat">Detected {0} backup files</sys:String>
+    <sys:String x:Key="ModdedSavesFormat">{0} saves contain mod data</sys:String>
+    <sys:String x:Key="DatJsonCountFormat">Contains {0} DAT and {1} JSON files</sys:String>
+    <sys:String x:Key="JsonOnlyFormat">{0} in JSON format</sys:String>
+    <sys:String x:Key="DatOnlyFormat">{0} in DAT format</sys:String>
+    <sys:String x:Key="ConvertCompleteDetailFormat">{0}, converted {1} to {2}</sys:String>
+    <sys:String x:Key="DeleteCompleteDetailFormat">{0}, deleted {1}</sys:String>
+    <sys:String x:Key="FileTypeDeletedFormat">{0}, {1} file deleted</sys:String>
+
+    <!-- Error Messages -->
+    <sys:String x:Key="BackupErrorFormat">Error backing up {0}: {1}</sys:String>
+    <sys:String x:Key="NoValidBackupFile">No valid backup file found</sys:String>
+    <sys:String x:Key="RestoreErrorFormat">Error restoring {0}: {1}</sys:String>
+    <sys:String x:Key="DeleteDatErrorFormat">Error deleting DAT file: {0}</sys:String>
+    <sys:String x:Key="DeleteJsonErrorFormat">Error deleting JSON file: {0}</sys:String>
+    <sys:String x:Key="ConvertErrorFormat">Error converting {0}: {1}</sys:String>
+
+    <!-- Confirmation Dialogs -->
+    <sys:String x:Key="ConfirmRestoreMessagePart1">
+        Are you sure you want to restore {0} from backup?
+
+    </sys:String>
+    <sys:String x:Key="BackupFileInfo">
+        Backup file: {0}
+    </sys:String>
+    <sys:String x:Key="RestoreWarning">Current save will be overwritten, this action cannot be undone!</sys:String>
+    <sys:String x:Key="ConfirmDeleteDatMessagePart1">
+        Are you sure you want to delete the DAT file for {0}?
+
+    </sys:String>
+    <sys:String x:Key="ConfirmDeleteJsonMessagePart1">
+        Are you sure you want to delete the JSON file for {0}?
+
+    </sys:String>
+    <sys:String x:Key="FilePathInfo">
+        File path: {0}
+    </sys:String>
+    <sys:String x:Key="IrreversibleWarning">This action cannot be undone!</sys:String>
+
+    <!-- Progress Messages -->
+    <sys:String x:Key="RestoringFormat">Restoring {0}...</sys:String>
+    <sys:String x:Key="ConvertingToJsonFormat">Converting {0} to JSON...</sys:String>
+    <sys:String x:Key="ConvertingToDatFormat">Converting {0} to DAT...</sys:String>
+    
+    <!-- Other -->
+    <sys:String x:Key="Count"></sys:String>
+    <sys:String x:Key="Other">Other</sys:String>
+    <sys:String x:Key="SaveFile">Save</sys:String>
+    <sys:String x:Key="ModData">Mod Data</sys:String>
+    <sys:String x:Key="BackupFiles">Backup Files</sys:String>
+    <sys:String x:Key="Unknown">Unknown</sys:String>
+    <sys:String x:Key="Slot">Slot</sys:String>
+    <sys:String x:Key="Status">Status</sys:String>
+    <sys:String x:Key="Size">Size</sys:String>
+    <sys:String x:Key="Modified">Modified</sys:String>
+    <sys:String x:Key="DatFile">DAT File</sys:String>
+    <sys:String x:Key="JsonFile">JSON File</sys:String>
+    <sys:String x:Key="ModDataFiles">Mod Data Files</sys:String>
+    <sys:String x:Key="OtherFiles">Other Files</sys:String>
+    <sys:String x:Key="LanguageSwitched">Language switched successfully</sys:String>
+
+</ResourceDictionary>
