@@ -82,82 +82,112 @@
                 </StackPanel>
             </Grid>
 
-<!-- Tab按钮 - 添加描边效果 -->
-<StackPanel Grid.Row="1"
-            Orientation="Horizontal"
-            Margin="0,0,0,10"
-            HorizontalAlignment="Left">
+            <Grid Grid.Row="1" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-    <ui:Button x:Name="HollowKnightButton"
-               Content="初代"
-               Command="{Binding SelectGameCommand}"
-               CommandParameter="0"
-               Margin="0,0,8,0"
-               Padding="16,8">
-        <ui:Button.Style>
-            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ui:Button">
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Content="{TemplateBinding Content}" />
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding SelectedGameIndex}" Value="0">
-                        <Setter Property="Background" Value="#575761" />
-                        <Setter Property="BorderBrush" Value="#6B6B75" />
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="Foreground" Value="#FFFFFF" />
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>
-        </ui:Button.Style>
-    </ui:Button>
+                <!-- 左侧：游戏选择按钮 -->
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Left">
 
-    <ui:Button x:Name="SilksongButton"
-               Content="丝之歌"
-               Command="{Binding SelectGameCommand}"
-               CommandParameter="1"
-               Padding="16,8">
-        <ui:Button.Style>
-            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ui:Button">
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4"
-                                    Padding="{TemplateBinding Padding}">
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Content="{TemplateBinding Content}" />
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding SelectedGameIndex}" Value="1">
-                        <Setter Property="Background" Value="#575761" />
-                        <Setter Property="BorderBrush" Value="#6B6B75" />
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="Foreground" Value="#FFFFFF" />
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>
-        </ui:Button.Style>
-    </ui:Button>
-</StackPanel>
+                    <ui:Button x:Name="HollowKnightButton"
+                               Content="初代"
+                               Command="{Binding SelectGameCommand}"
+                               CommandParameter="0"
+                               Margin="0,0,8,0"
+                               Padding="16,8">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ui:Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="4"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  VerticalAlignment="Center"
+                                                                  Content="{TemplateBinding Content}" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedGameIndex}" Value="0">
+                                        <Setter Property="Background" Value="#575761" />
+                                        <Setter Property="BorderBrush" Value="#6B6B75" />
+                                        <Setter Property="BorderThickness" Value="1" />
+                                        <Setter Property="Foreground" Value="#FFFFFF" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
 
+                    <ui:Button x:Name="SilksongButton"
+                               Content="丝之歌"
+                               Command="{Binding SelectGameCommand}"
+                               CommandParameter="1"
+                               Padding="16,8">
+                        <ui:Button.Style>
+                            <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ui:Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="4"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  VerticalAlignment="Center"
+                                                                  Content="{TemplateBinding Content}" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedGameIndex}" Value="1">
+                                        <Setter Property="Background" Value="#575761" />
+                                        <Setter Property="BorderBrush" Value="#6B6B75" />
+                                        <Setter Property="BorderThickness" Value="1" />
+                                        <Setter Property="Foreground" Value="#FFFFFF" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:Button.Style>
+                    </ui:Button>
+                </StackPanel>
+
+                <!-- 右侧：Steam ID 选择器（仅在丝之歌模式下显示） -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding IsSilksongMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                    <TextBlock Text="Steam ID:"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Margin="0,0,8,0" />
+
+                    <ComboBox ItemsSource="{Binding AvailableSteamIds}"
+                              SelectedItem="{Binding SelectedSteamId}"
+                              MinWidth="120"
+                              Height="32"
+                              FontSize="12">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontFamily="Consolas" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
 
 
             <!-- 存档目录信息卡片 -->
@@ -520,10 +550,17 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0"
-                               Text="{Binding StatusMessage}"
                                FontSize="12"
                                VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                               TextWrapping="Wrap">
+                        <Run Text="{Binding StatusMessage}"
+                             FontWeight="Medium"
+                             Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        <Run Text=": "
+                             Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <Run Text="{Binding StatusDetail}"
+                             Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </TextBlock>
 
                     <StackPanel Grid.Column="1"
                                 Orientation="Horizontal"
@@ -531,10 +568,12 @@
                         <TextBlock Text="{Binding FileCountText}"
                                    FontSize="12"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   Margin="0,0,16,0" />
+                                   Margin="0,0,0,0" />
+                        <!-- 
                         <TextBlock Text="就绪"
                                    FontSize="12"
-                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" /
+                        -->
                     </StackPanel>
                 </Grid>
             </Border>

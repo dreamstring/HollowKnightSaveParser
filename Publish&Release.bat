@@ -61,8 +61,12 @@ if exist obj rmdir /s /q obj
 
 echo 开始发布单文件...
 
-REM 使用简化的发布命令（参考能用的版本）
-dotnet publish -c Release -r win-x64 /p:SelfContained=true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=false /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false --output ./publish-!timestamp!
+REM 创建临时发布目录
+set "temp_publish=temp_publish_!timestamp!"
+if exist "!temp_publish!" rmdir /s /q "!temp_publish!"
+
+REM 发布单文件到临时目录
+dotnet publish -c Release -r win-x64 /p:SelfContained=true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=false /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false --output ./!temp_publish!
 
 if !errorlevel! neq 0 (
     echo 发布失败！
@@ -70,59 +74,38 @@ if !errorlevel! neq 0 (
     exit /b 1
 )
 
-echo.
-echo 发布成功！
-echo 输出目录: %CD%\publish-!timestamp!
-echo 可执行文件: %CD%\publish-!timestamp!\%project_name%.exe
-echo.
+REM 设置最终的 exe 文件名（包含版本号）
+set "final_exe=%project_name%_v!version!.exe"
 
-REM 创建最终打包目录
-set "package_dir=%project_name%_Package_!timestamp!"
-if exist "!package_dir!" rmdir /s /q "!package_dir!"
-mkdir "!package_dir!"
-
-echo 准备打包文件...
-
-REM 复制发布的文件
-xcopy "publish-!timestamp!\*" "!package_dir!\" /E /I /Y
-
-REM 复制 Examples 文件夹（如果存在）
-if exist "Examples" (
-    echo 复制 Examples 文件夹...
-    xcopy "Examples" "!package_dir!\Examples\" /E /I /Y
-) else (
-    echo 警告：未找到 Examples 文件夹，跳过复制
+REM 删除已存在的同名 exe 文件
+if exist "!final_exe!" (
+    echo 删除现有文件: !final_exe!
+    del "!final_exe!"
 )
 
-REM 创建 ZIP 文件
-set "zip_name=%project_name%_!version!.zip"
-echo 创建 ZIP 文件: !zip_name!
-
-REM 删除已存在的 ZIP 文件
-if exist "!zip_name!" (
-    echo 删除现有 ZIP 文件...
-    del "!zip_name!"
-)
-
-powershell -Command "Compress-Archive -Path '!package_dir!\*' -DestinationPath '!zip_name!' -Force"
-
-if exist "!zip_name!" (
+REM 复制生成的 exe 到项目根目录
+if exist "!temp_publish!\%project_name%.exe" (
+    echo 复制可执行文件到项目根目录...
+    copy "!temp_publish!\%project_name%.exe" "!final_exe!"
+    
     echo.
-    echo 打包完成！
-    echo ZIP 文件: %CD%\!zip_name!
+    echo 发布成功！
+    echo 可执行文件: %CD%\!final_exe!
     echo.
     
-    REM 自动清理临时文件
+    REM 清理临时发布目录
     echo 清理临时文件...
-    rmdir /s /q "!package_dir!"
-    rmdir /s /q "publish-!timestamp!"
+    rmdir /s /q "!temp_publish!"
     echo 临时文件已清理
     
     echo.
-    echo 构建和打包成功完成！
+    echo 构建完成！单文件 exe 已生成在项目根目录！
     
 ) else (
-    echo ZIP 文件创建失败
+    echo 错误：未找到生成的 exe 文件
+    rmdir /s /q "!temp_publish!"
+    pause
+    exit /b 1
 )
 
 pause

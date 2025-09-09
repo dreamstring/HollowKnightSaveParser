@@ -12,19 +12,34 @@ namespace HollowKnightSaveParser.Models
         public string BaseName { get; set; } = string.Empty;
         public string DatFilePath { get; set; } = string.Empty;
         public string JsonFilePath { get; set; } = string.Empty;
-        
+
         // 添加相关文件列表（备份文件、mod文件等）
         public List<string> RelatedFiles { get; set; } = new();
-        
+
         public bool HasDatFile => !string.IsNullOrEmpty(DatFilePath) && File.Exists(DatFilePath);
         public bool HasJsonFile => !string.IsNullOrEmpty(JsonFilePath) && File.Exists(JsonFilePath);
-        
+
         public bool CanBackup => HasDatFile;
         public bool CanRestore => HasBackupFiles;
-        
+
+        // 添加这两个缺失的属性
+        public bool HasBackups => BackupCount > 0;
+
+        public int BackupCount
+        {
+            get
+            {
+                var categories = CategorizedRelatedFiles;
+                return categories["backup"].Count(f =>
+                    f.EndsWith(".dat.bak", StringComparison.OrdinalIgnoreCase) ||
+                    f.Contains("backup") ||
+                    Regex.IsMatch(f, @"user\d+_[\d\.]+\.(dat|json)$"));
+            }
+        }
+
         // 显示的文件名 - 显示实际的文件名
-        public string DisplayFileName 
-        { 
+        public string DisplayFileName
+        {
             get
             {
                 if (HasDatFile && HasJsonFile)
@@ -40,11 +55,11 @@ namespace HollowKnightSaveParser.Models
                 {
                     return Path.GetFileName(JsonFilePath);
                 }
+
                 return BaseName;
             }
         }
-        
-        // 文件分类属性
+
         // 文件分类属性
         public Dictionary<string, List<string>> CategorizedRelatedFiles
         {
@@ -61,7 +76,7 @@ namespace HollowKnightSaveParser.Models
                 foreach (var file in RelatedFiles)
                 {
                     var fileName = file.ToLowerInvariant();
-            
+
                     // 标准存档文件
                     if (Regex.IsMatch(fileName, @"^user\d+\.(dat|json)$"))
                     {
@@ -72,11 +87,12 @@ namespace HollowKnightSaveParser.Models
                     {
                         categories["mod"].Add(file);
                     }
-                    // 备份文件 - 修复这里的逻辑
-                    else if (fileName.Contains("bak") || 
+                    // 备份文件 - 扩展备份文件识别模式
+                    else if (fileName.Contains("bak") ||
                              fileName.Contains("backup") ||
                              Regex.IsMatch(fileName, @"user\d+\.\d{8}_\d{6}\.dat\.bak$") ||
-                             Regex.IsMatch(fileName, @"user\d+_[\d\.]+\.(dat|json)$"))
+                             Regex.IsMatch(fileName, @"user\d+_[\d\.]+\.(dat|json)$") ||
+                             Regex.IsMatch(fileName, @"user\d+\.before_restore\.bak$"))
                     {
                         categories["backup"].Add(file);
                     }
@@ -90,7 +106,7 @@ namespace HollowKnightSaveParser.Models
                 return categories;
             }
         }
-        
+
         public string FileStatusText
         {
             get
@@ -105,7 +121,7 @@ namespace HollowKnightSaveParser.Models
                     return "错误";
             }
         }
-        
+
         // 文件类型描述
         public string FileTypeDisplayText
         {
@@ -121,35 +137,41 @@ namespace HollowKnightSaveParser.Models
                     return "未知格式";
             }
         }
-        
+
         // 详细的文件信息
         public string DetailedFileInfo
         {
             get
             {
                 var info = new List<string>();
-                
+
                 if (HasDatFile)
                 {
                     var datInfo = new FileInfo(DatFilePath);
                     info.Add($"DAT: {FormatFileSize(datInfo.Length)}");
                 }
-                
+
                 if (HasJsonFile)
                 {
                     var jsonInfo = new FileInfo(JsonFilePath);
                     info.Add($"JSON: {FormatFileSize(jsonInfo.Length)}");
                 }
-                
-                if (RelatedFiles.Count > 0)
+
+                if (BackupCount > 0)
                 {
-                    info.Add($"相关文件: {RelatedFiles.Count}个");
+                    info.Add($"备份: {BackupCount}个");
                 }
-                
+
+                if (RelatedFiles.Count > BackupCount)
+                {
+                    var otherCount = RelatedFiles.Count - BackupCount;
+                    info.Add($"其他: {otherCount}个");
+                }
+
                 return string.Join(" | ", info);
             }
         }
-        
+
         // 详细的文件类型描述
         public string DetailedFileTypeInfo
         {
@@ -157,27 +179,27 @@ namespace HollowKnightSaveParser.Models
             {
                 var categories = CategorizedRelatedFiles;
                 var info = new List<string>();
-                
+
                 if (HasDatFile || HasJsonFile)
                 {
                     info.Add($"存档: {(HasDatFile && HasJsonFile ? "DAT+JSON" : HasDatFile ? "DAT" : "JSON")}");
                 }
-                
+
                 if (categories["mod"].Count > 0)
                 {
                     var modFiles = string.Join(", ", categories["mod"]);
                     info.Add($"Mod数据: {modFiles}");
                 }
-                
+
                 if (categories["backup"].Count > 0)
                 {
                     info.Add($"备份文件: {categories["backup"].Count}个");
                 }
-                
+
                 return string.Join(" | ", info);
             }
         }
-        
+
         public long FileSize
         {
             get
@@ -187,18 +209,18 @@ namespace HollowKnightSaveParser.Models
                 {
                     return new FileInfo(DatFilePath).Length;
                 }
-        
+
                 if (HasJsonFile && File.Exists(JsonFilePath))
                 {
                     return new FileInfo(JsonFilePath).Length;
                 }
-        
+
                 return 0;
             }
         }
-        
+
         public string FormattedFileSize => FormatFileSize(FileSize);
-        
+
         // 提取为独立方法，可复用
         private static string FormatFileSize(long size)
         {
@@ -209,7 +231,7 @@ namespace HollowKnightSaveParser.Models
             else
                 return $"{size / (1024.0 * 1024.0):F1} MB";
         }
-        
+
         // 修改时间（取最新的文件）
         public DateTime LastModified
         {
@@ -220,19 +242,19 @@ namespace HollowKnightSaveParser.Models
                 return datTime > jsonTime ? datTime : jsonTime;
             }
         }
-        
+
         // 格式化的修改时间
-        public string FormattedLastModified => LastModified == DateTime.MinValue 
-            ? "未知" 
+        public string FormattedLastModified => LastModified == DateTime.MinValue
+            ? "未知"
             : LastModified.ToString("yyyy-MM-dd HH:mm:ss");
-        
+
         // 转换按钮状态
         public bool CanConvertToJson => HasDatFile;
         public bool CanConvertToDat => HasJsonFile;
-        
+
         public string DatToJsonButtonText => HasJsonFile ? "更新JSON" : "转为JSON";
         public string JsonToDatButtonText => HasDatFile ? "更新DAT" : "转为DAT";
-        
+
         // 工具提示信息
         public string ToolTipText
         {
@@ -245,15 +267,15 @@ namespace HollowKnightSaveParser.Models
                     $"大小: {FormattedFileSize}",
                     $"修改: {FormattedLastModified}"
                 };
-                
+
                 if (HasDatFile)
                     tooltip.Add($"DAT文件: {Path.GetFileName(DatFilePath)}");
-                
+
                 if (HasJsonFile)
                     tooltip.Add($"JSON文件: {Path.GetFileName(JsonFilePath)}");
-                
+
                 var categories = CategorizedRelatedFiles;
-                
+
                 if (categories["mod"].Count > 0)
                 {
                     tooltip.Add($"Mod数据文件:");
@@ -262,21 +284,21 @@ namespace HollowKnightSaveParser.Models
                         tooltip.Add($"  • {modFile}");
                     }
                 }
-                
+
                 if (categories["backup"].Count > 0)
                 {
                     tooltip.Add($"备份文件: {string.Join(", ", categories["backup"])}");
                 }
-                
+
                 if (categories["other"].Count > 0)
                 {
                     tooltip.Add($"其他文件: {string.Join(", ", categories["other"])}");
                 }
-                
+
                 return string.Join("\n", tooltip);
             }
         }
-        
+
         // 文件完整性检查
         public bool IsValid
         {
@@ -286,17 +308,17 @@ namespace HollowKnightSaveParser.Models
                 {
                     if (HasDatFile && !File.Exists(DatFilePath))
                         return false;
-                    
+
                     if (HasJsonFile && !File.Exists(JsonFilePath))
                         return false;
-                    
+
                     // 检查文件大小是否合理（存档文件不应该为空）
                     if (HasDatFile && new FileInfo(DatFilePath).Length == 0)
                         return false;
-                    
+
                     if (HasJsonFile && new FileInfo(JsonFilePath).Length == 0)
                         return false;
-                    
+
                     return HasDatFile || HasJsonFile;
                 }
                 catch
@@ -305,7 +327,7 @@ namespace HollowKnightSaveParser.Models
                 }
             }
         }
-        
+
         // 获取主要文件路径（优先DAT）
         public string PrimaryFilePath
         {
@@ -316,19 +338,19 @@ namespace HollowKnightSaveParser.Models
                 return string.Empty;
             }
         }
-        
+
         // 获取文件夹路径
         public string DirectoryPath
         {
             get
             {
                 var primaryPath = PrimaryFilePath;
-                return string.IsNullOrEmpty(primaryPath) 
-                    ? string.Empty 
+                return string.IsNullOrEmpty(primaryPath)
+                    ? string.Empty
                     : Path.GetDirectoryName(primaryPath) ?? string.Empty;
             }
         }
-        
+
         // 是否有 Mod 数据
         public bool HasModData => CategorizedRelatedFiles["mod"].Count > 0;
 
@@ -341,7 +363,7 @@ namespace HollowKnightSaveParser.Models
                 return modFiles.FirstOrDefault(f => f.Contains("modded.json"));
             }
         }
-        
+
         public bool HasBackupFiles
         {
             get
@@ -351,29 +373,29 @@ namespace HollowKnightSaveParser.Models
             }
         }
 
-// 获取最新的备份文件路径
+        // 获取最新的备份文件路径
         public string? LatestBackupFilePath
         {
             get
             {
                 if (!HasBackupFiles) return null;
-        
+
                 var backupFiles = CategorizedRelatedFiles["backup"]
                     .Where(f => f.EndsWith(".dat.bak", StringComparison.OrdinalIgnoreCase))
                     .Select(f => Path.Combine(DirectoryPath, f))
                     .Where(File.Exists)
                     .OrderByDescending(File.GetLastWriteTime)
                     .ToList();
-            
+
                 return backupFiles.FirstOrDefault();
             }
         }
 
-// 生成备份文件路径
+        // 生成备份文件路径
         public string GenerateBackupFilePath()
         {
             if (!HasDatFile) return string.Empty;
-    
+
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             return Path.ChangeExtension(DatFilePath, $".{timestamp}.dat.bak");
         }
