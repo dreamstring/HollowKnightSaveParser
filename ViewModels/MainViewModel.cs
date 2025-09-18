@@ -896,19 +896,28 @@ namespace HollowKnightSaveParser.ViewModels
         // 确认对话框方法 - 简化版本
         private async Task<bool> ShowConfirmationDialogAsync(string title, string message)
         {
+            var textBlock = new TextBlock
+            {
+                Text = message,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 400,
+                LineHeight = 20,
+                Margin = new Thickness(0, 10, 0, 10)
+            };
+
             var dialog = new Wpf.Ui.Controls.MessageBox
             {
                 Title = title,
-                Content = message,
+                Content = textBlock, // 使用 TextBlock 而不是直接传字符串
                 PrimaryButtonText = GetString("Confirm"),
-                CloseButtonText = GetString("Cancel"), // 将关闭按钮改名为GetString("Cancel")
-                // 不设置 SecondaryButtonText，这样就只有两个按钮
+                CloseButtonText = GetString("Cancel"),
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
 
             var result = await dialog.ShowDialogAsync();
             return result == Wpf.Ui.Controls.MessageBoxResult.Primary;
         }
+
 
         private SaveFileInfo[] GroupSaveFiles()
         {

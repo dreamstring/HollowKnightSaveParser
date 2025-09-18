@@ -457,3 +457,5 @@ $RECYCLE.BIN/
 # WPF specific
 *.g.cs
 *.g.i.cs
+.idea
+.vs
