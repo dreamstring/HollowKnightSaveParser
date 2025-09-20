@@ -82,25 +82,10 @@
     <!-- 对话框 -->
     <sys:String x:Key="ConfirmRestore">确认恢复</sys:String>
     <sys:String x:Key="ConfirmDelete">确认删除</sys:String>
-    <sys:String x:Key="RestoreConfirmMessage">
-        确定要从备份恢复 {0} 吗？
-
-        备份文件: {1}
-        当前存档将被覆盖，此操作不可撤销！
-    </sys:String>
-    <sys:String x:Key="DeleteDatConfirmMessage">
-        确定要删除 {0} 的 DAT 文件吗？
-
-        文件路径: {1}
-        此操作不可撤销！
-    </sys:String>
-    <sys:String x:Key="DeleteJsonConfirmMessage">
-        确定要删除 {0} 的 JSON 文件吗？
-
-        文件路径: {1}
-        此操作不可撤销！
-    </sys:String>
-
+    <sys:String x:Key="RestoreConfirmMessage">确定要从备份恢复 {0} 吗？&#10;&#10;备份文件: {1}&#10;当前存档将被覆盖，此操作不可撤销！</sys:String>
+    <sys:String x:Key="DeleteDatConfirmMessage">确定要删除 {0} 的 DAT 文件吗？&#10;&#10;文件路径: {1}&#10;此操作不可撤销！</sys:String>
+    <sys:String x:Key="DeleteJsonConfirmMessage">确定要删除 {0} 的 JSON 文件吗？&#10;&#10;文件路径: {1}&#10;此操作不可撤销！</sys:String>
+    
     <!-- 详细状态信息 -->
     <sys:String x:Key="FoundSlots">找到 {0} 个存档槽位</sys:String>
     <sys:String x:Key="FoundBackups">检测到 {0} 个备份文件</sys:String>
@@ -161,31 +146,66 @@
     <sys:String x:Key="ConvertErrorFormat">转换 {0} 时出错: {1}</sys:String>
 
     <!-- 确认对话框 -->
-    <sys:String x:Key="ConfirmRestoreMessagePart1">
-        确定要从备份恢复 {0} 吗？
-
-    </sys:String>
-    <sys:String x:Key="BackupFileInfo">
-        备份文件: {0}
-    </sys:String>
+    <sys:String x:Key="ConfirmRestoreMessagePart1">确定要从备份恢复 {0} 吗？&#10;&#10;</sys:String>
+    <sys:String x:Key="BackupFileInfo">备份文件: {0}</sys:String>
     <sys:String x:Key="RestoreWarning">当前存档将被覆盖，此操作不可撤销！</sys:String>
-    <sys:String x:Key="ConfirmDeleteDatMessagePart1">
-        确定要删除 {0} 的 DAT 文件吗？
-
-    </sys:String>
-    <sys:String x:Key="ConfirmDeleteJsonMessagePart1">
-        确定要删除 {0} 的 JSON 文件吗？
-
-    </sys:String>
-    <sys:String x:Key="FilePathInfo">
-        文件路径: {0}
-    </sys:String>
+    <sys:String x:Key="ConfirmDeleteDatMessagePart1">确定要删除 {0} 的 DAT 文件吗？&#10;&#10;</sys:String>
+    <sys:String x:Key="ConfirmDeleteJsonMessagePart1">确定要删除 {0} 的 JSON 文件吗？&#10;&#10;</sys:String>
+    <sys:String x:Key="FilePathInfo">文件路径: {0}</sys:String>
     <sys:String x:Key="IrreversibleWarning">此操作不可撤销！</sys:String>
 
     <!-- 进度消息 -->
     <sys:String x:Key="RestoringFormat">正在恢复 {0}...</sys:String>
     <sys:String x:Key="ConvertingToJsonFormat">正在将 {0} 转换为 JSON...</sys:String>
     <sys:String x:Key="ConvertingToDatFormat">正在将 {0} 转换为 DAT...</sys:String>
+    
+    <!-- 右键菜单相关 -->
+    <sys:String x:Key="CreateBackup">创建备份</sys:String>
+    <sys:String x:Key="RestoreSpecificBackup">恢复指定备份</sys:String>
+    <sys:String x:Key="DeleteBackup">删除备份</sys:String>
+    <sys:String x:Key="OpenInExplorer">在资源管理器中打开</sys:String>
+    <sys:String x:Key="CopyFilePath">复制文件路径</sys:String>
+    <sys:String x:Key="RenameFile">重命名文件</sys:String>
+    <sys:String x:Key="DeleteFile">删除文件</sys:String>
+    <sys:String x:Key="RefreshBackups">刷新备份列表</sys:String>
+    <sys:String x:Key="CleanupOldBackups">清理旧备份</sys:String>
+
+    <!-- 右键菜单操作消息 -->
+    <sys:String x:Key="NoDatFileForBackup">没有找到 DAT 文件，无法创建备份</sys:String>
+    <sys:String x:Key="CreateBackupErrorFormat">创建备份失败：{0}</sys:String>
+    <sys:String x:Key="CannotFindCorrespondingSaveFile">找不到对应的存档文件</sys:String>
+    <sys:String x:Key="ConfirmRestoreFromBackupFormat">确定要从备份 {0} 恢复到 {1} 吗？&#10;&#10;当前存档将被覆盖！</sys:String>
+    <sys:String x:Key="RestoreFromBackupErrorFormat">从备份恢复失败：{0}</sys:String>
+    <sys:String x:Key="ConfirmDeleteBackupFormat">确定要删除备份文件 {0} 吗？&#10;&#10;此操作无法撤销！</sys:String>
+    <sys:String x:Key="BackupDeleted">备份文件已删除</sys:String>
+    <sys:String x:Key="DeleteBackupErrorFormat">删除备份失败：{0}</sys:String>
+    <sys:String x:Key="OpenExplorerErrorFormat">无法打开资源管理器：{0}</sys:String>
+    <sys:String x:Key="FilePathCopied">文件路径已复制到剪贴板</sys:String>
+    <sys:String x:Key="CopyPathErrorFormat">复制路径失败：{0}</sys:String>
+    <sys:String x:Key="EnterNewFileName">请输入新的文件名（不包含扩展名）：</sys:String>
+    <sys:String x:Key="InvalidFileName">文件名包含无效字符</sys:String>
+    <sys:String x:Key="TargetFileExists">目标文件已存在</sys:String>
+    <sys:String x:Key="TargetJsonFileExists">目标 JSON 文件已存在</sys:String>
+    <sys:String x:Key="FileRenamed">文件重命名成功</sys:String>
+    <sys:String x:Key="RenameErrorFormat">重命名失败：{0}</sys:String>
+    <sys:String x:Key="ConfirmDeleteFilesFormat">确定要删除以下文件吗？&#10;&#10;{0}&#10;&#10;此操作无法撤销！</sys:String>
+    <sys:String x:Key="And">、</sys:String>
+    <sys:String x:Key="FilesDeleted">文件已删除</sys:String>
+    <sys:String x:Key="DeleteFileErrorFormat">删除文件失败：{0}</sys:String>
+    <sys:String x:Key="BackupListRefreshed">备份列表已刷新</sys:String>
+    <sys:String x:Key="RefreshBackupErrorFormat">刷新备份列表失败：{0}</sys:String>
+    <sys:String x:Key="NoOldBackupsToCleanup">没有需要清理的旧备份</sys:String>
+    <sys:String x:Key="ConfirmCleanup">确认清理</sys:String>
+    <sys:String x:Key="ConfirmCleanupOldBackupsFormat">确定要删除 {0} 个旧备份文件吗？&#10;&#10;将保留最新的5个备份</sys:String>
+    <sys:String x:Key="CleanupCompleteFormat">清理完成，已删除 {0} 个旧备份</sys:String>
+    <sys:String x:Key="CleanupErrorFormat">清理备份失败：{0}</sys:String>
+    
+    <!-- 备份类型 -->
+    <sys:String x:Key="BackupTypeAuto">自动</sys:String>
+    <sys:String x:Key="BackupTypeBeforeRestore">恢复前</sys:String>
+    <sys:String x:Key="BackupTypeTimestamped">时间戳</sys:String>
+    <sys:String x:Key="BackupTypeManual">手动</sys:String>
+    <sys:String x:Key="BackupTypeDefault">备份</sys:String>
     
     <!-- 其他-->
     <sys:String x:Key="Count">个</sys:String>
@@ -204,5 +224,4 @@
     <sys:String x:Key="OtherFiles">其他文件</sys:String>
     <sys:String x:Key="LanguageSwitched">语言切换成功</sys:String>
 
-    
 </ResourceDictionary>

@@ -16,6 +16,7 @@
         <converters:FileStatusToBrushConverter x:Key="FileStatusToBrushConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:BoolToLanguageTextConverter x:Key="BoolToLanguageTextConverter" />
+        <converters:TupleConverter x:Key="TupleConverter" />
 
         <!-- 加载动画样式 -->
         <Style x:Key="LoadingRingStyle" TargetType="ui:ProgressRing">
@@ -454,32 +455,50 @@
                                                     </ui:Button.Style>
                                                 </ui:Button>
 
-
                                                 <!-- 备份按钮 -->
-                                                <ui:Button Content="{DynamicResource Backup}"
-                                                           Command="{Binding DataContext.BackupSaveFileCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
+                                                <ui:Button x:Name="BackupButton"
+                                                           Content="{DynamicResource Backup}"
+                                                           Command="{Binding DataContext.CreateBackupCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            CommandParameter="{Binding}"
                                                            IsEnabled="{Binding CanBackup}"
                                                            FontSize="11"
                                                            Height="30"
                                                            Width="90"
                                                            Margin="0,0,8,0"
+                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            ToolTip="{DynamicResource BackupDatFile}">
-                                                    <ui:Button.Style>
-                                                        <Style TargetType="ui:Button"
-                                                               BasedOn="{StaticResource {x:Type ui:Button}}">
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding CanBackup}"
-                                                                             Value="False">
-                                                                    <Setter Property="Opacity" Value="0.4" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </ui:Button.Style>
+                                                    <ui:Button.ContextMenu>
+                                                        <ContextMenu Opened="ContextMenu_Opened">
+                                                            <!-- 创建备份 -->
+                                                            <MenuItem Tag="CreateBackup"
+                                                                      Header="{DynamicResource CreateBackup}"
+                                                                      Command="{Binding PlacementTarget.Tag.CreateBackupCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      IsEnabled="{Binding CanBackup}">
+                                                                <MenuItem.Icon>
+                                                                    <ui:SymbolIcon Symbol="Save24" FontSize="14" />
+                                                                </MenuItem.Icon>
+                                                            </MenuItem>
+
+                                                            <Separator />
+
+                                                            <!-- 管理操作 -->
+                                                            <MenuItem Tag="CleanupOldBackups"
+                                                                      Header="{DynamicResource CleanupOldBackups}"
+                                                                      Command="{Binding PlacementTarget.Tag.CleanupOldBackupsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                                      IsEnabled="{Binding HasBackups}">
+                                                                <MenuItem.Icon>
+                                                                    <ui:SymbolIcon Symbol="Broom24" FontSize="14" />
+                                                                </MenuItem.Icon>
+                                                            </MenuItem>
+                                                        </ContextMenu>
+                                                    </ui:Button.ContextMenu>
                                                 </ui:Button>
 
                                                 <!-- 恢复按钮 -->
-                                                <ui:Button Content="{DynamicResource Restore}"
+                                                <ui:Button x:Name="RestoreButton"
+                                                           Content="{DynamicResource Restore}"
                                                            Command="{Binding DataContext.RestoreSaveFileCommand, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            CommandParameter="{Binding}"
                                                            IsEnabled="{Binding CanRestore}"
@@ -487,19 +506,59 @@
                                                            Height="30"
                                                            Width="90"
                                                            Margin="0,0,8,0"
+                                                           Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ui:FluentWindow}}"
                                                            ToolTip="{DynamicResource RestoreFromBackup}">
-                                                    <ui:Button.Style>
-                                                        <Style TargetType="ui:Button"
-                                                               BasedOn="{StaticResource {x:Type ui:Button}}">
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding CanRestore}"
-                                                                             Value="False">
-                                                                    <Setter Property="Opacity" Value="0.4" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </ui:Button.Style>
+                                                    <ui:Button.ContextMenu>
+                                                        <ContextMenu Opened="ContextMenu_Opened">
+                                                            <!-- 恢复指定备份 -->
+                                                            <MenuItem Tag="RestoreSpecificBackup"
+                                                                      Header="{DynamicResource RestoreSpecificBackup}"
+                                                                      IsEnabled="{Binding HasBackups}">
+                                                                <MenuItem.Icon>
+                                                                    <ui:SymbolIcon Symbol="History24" FontSize="14" />
+                                                                </MenuItem.Icon>
+                                                                <MenuItem.ItemsSource>
+                                                                    <Binding Path="BackupVersions" />
+                                                                </MenuItem.ItemsSource>
+                                                                <MenuItem.ItemContainerStyle>
+                                                                    <Style TargetType="MenuItem">
+                                                                        <Setter Property="Header"
+                                                                                Value="{Binding DetailedDisplayName}" />
+                                                                        <Setter Property="Command"
+                                                                                Value="{Binding PlacementTarget.Tag.RestoreFromSpecificBackupCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                        <Setter Property="CommandParameter"
+                                                                                Value="{Binding}" />
+                                                                    </Style>
+                                                                </MenuItem.ItemContainerStyle>
+                                                            </MenuItem>
+
+                                                            <Separator />
+
+                                                            <!-- 删除备份 -->
+                                                            <MenuItem Tag="DeleteBackup"
+                                                                      Header="{DynamicResource DeleteBackup}"
+                                                                      IsEnabled="{Binding HasBackups}">
+                                                                <MenuItem.Icon>
+                                                                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" />
+                                                                </MenuItem.Icon>
+                                                                <MenuItem.ItemsSource>
+                                                                    <Binding Path="BackupVersions" />
+                                                                </MenuItem.ItemsSource>
+                                                                <MenuItem.ItemContainerStyle>
+                                                                    <Style TargetType="MenuItem">
+                                                                        <Setter Property="Header"
+                                                                                Value="{Binding DetailedDisplayName}" />
+                                                                        <Setter Property="Command"
+                                                                                Value="{Binding PlacementTarget.Tag.DeleteSpecificBackupCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                        <Setter Property="CommandParameter"
+                                                                                Value="{Binding}" />
+                                                                    </Style>
+                                                                </MenuItem.ItemContainerStyle>
+                                                            </MenuItem>
+                                                        </ContextMenu>
+                                                    </ui:Button.ContextMenu>
                                                 </ui:Button>
+
 
                                             </StackPanel>
 

@@ -186,7 +186,48 @@
     <sys:String x:Key="RestoringFormat">Restoring {0}...</sys:String>
     <sys:String x:Key="ConvertingToJsonFormat">Converting {0} to JSON...</sys:String>
     <sys:String x:Key="ConvertingToDatFormat">Converting {0} to DAT...</sys:String>
-    
+        
+    <!-- Context Menu Related -->
+    <sys:String x:Key="CreateBackup">Create Backup</sys:String>
+    <sys:String x:Key="RestoreSpecificBackup">Restore Specific Backup</sys:String>
+    <sys:String x:Key="DeleteBackup">Delete Backup</sys:String>
+    <sys:String x:Key="OpenInExplorer">Open in Explorer</sys:String>
+    <sys:String x:Key="CopyFilePath">Copy File Path</sys:String>
+    <sys:String x:Key="RenameFile">Rename File</sys:String>
+    <sys:String x:Key="DeleteFile">Delete File</sys:String>
+    <sys:String x:Key="RefreshBackups">Refresh Backups</sys:String>
+    <sys:String x:Key="CleanupOldBackups">Cleanup Old Backups</sys:String>
+
+    <!-- Context Menu Operation Messages -->
+    <sys:String x:Key="NoDatFileForBackup">No DAT file found, cannot create backup</sys:String>
+    <sys:String x:Key="CreateBackupErrorFormat">Failed to create backup: {0}</sys:String>
+    <sys:String x:Key="CannotFindCorrespondingSaveFile">Cannot find corresponding save file</sys:String>
+    <sys:String x:Key="ConfirmRestoreFromBackupFormat">Are you sure you want to restore from backup {0} to {1}?\n\nCurrent save will be overwritten!</sys:String>
+    <sys:String x:Key="RestoreFromBackupErrorFormat">Failed to restore from backup: {0}</sys:String>
+    <sys:String x:Key="ConfirmDeleteBackupFormat">Are you sure you want to delete backup file {0}?\n\nThis action cannot be undone!</sys:String>
+    <sys:String x:Key="BackupDeleted">Backup file deleted</sys:String>
+    <sys:String x:Key="DeleteBackupErrorFormat">Failed to delete backup: {0}</sys:String>
+    <sys:String x:Key="OpenExplorerErrorFormat">Cannot open Explorer: {0}</sys:String>
+    <sys:String x:Key="FilePathCopied">File path copied to clipboard</sys:String>
+    <sys:String x:Key="CopyPathErrorFormat">Failed to copy path: {0}</sys:String>
+    <sys:String x:Key="EnterNewFileName">Please enter new file name (without extension):</sys:String>
+    <sys:String x:Key="InvalidFileName">File name contains invalid characters</sys:String>
+    <sys:String x:Key="TargetFileExists">Target file already exists</sys:String>
+    <sys:String x:Key="TargetJsonFileExists">Target JSON file already exists</sys:String>
+    <sys:String x:Key="FileRenamed">File renamed successfully</sys:String>
+    <sys:String x:Key="RenameErrorFormat">Failed to rename: {0}</sys:String>
+    <sys:String x:Key="ConfirmDeleteFilesFormat">Are you sure you want to delete the following files?\n\n{0}\n\nThis action cannot be undone!</sys:String>
+    <sys:String x:Key="And"> and </sys:String>
+    <sys:String x:Key="FilesDeleted">Files deleted</sys:String>
+    <sys:String x:Key="DeleteFileErrorFormat">Failed to delete file: {0}</sys:String>
+    <sys:String x:Key="BackupListRefreshed">Backup list refreshed</sys:String>
+    <sys:String x:Key="RefreshBackupErrorFormat">Failed to refresh backup list: {0}</sys:String>
+    <sys:String x:Key="NoOldBackupsToCleanup">No old backups to cleanup</sys:String>
+    <sys:String x:Key="ConfirmCleanup">Confirm Cleanup</sys:String>
+    <sys:String x:Key="ConfirmCleanupOldBackupsFormat">Are you sure you want to delete {0} old backup files?\n\nThe latest 5 backups will be kept</sys:String>
+    <sys:String x:Key="CleanupCompleteFormat">Cleanup complete, deleted {0} old backups</sys:String>
+    <sys:String x:Key="CleanupErrorFormat">Failed to cleanup backups: {0}</sys:String>
+            
     <!-- Other -->
     <sys:String x:Key="Count"></sys:String>
     <sys:String x:Key="Other">Other</sys:String>

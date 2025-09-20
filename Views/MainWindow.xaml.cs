@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
 using Wpf.Ui.Controls;
 using HollowKnightSaveParser.Resources;
 using HollowKnightSaveParser.ViewModels;
+using MenuItem = Wpf.Ui.Controls.MenuItem;
 
 namespace HollowKnightSaveParser.Views
 {
@@ -17,6 +20,28 @@ namespace HollowKnightSaveParser.Views
             
             // 设置 TitleBar 图标
             SetTitleBarIcon();
+        }
+        
+        private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu cm)
+            {
+                RefreshContextMenuHeaders(cm);
+            }
+        }
+        
+        private void RefreshContextMenuHeaders(ContextMenu cm)
+        {
+            foreach (var mi in cm.Items.OfType<MenuItem>())
+            {
+                if (mi.Tag is string key)
+                {
+                    // 尝试直接从 Application 资源获取最新值
+                    var value = TryFindResource(key) ?? Application.Current.Resources[key];
+                    if (value != null)
+                        mi.Header = value;
+                }
+            }
         }
         
         private void SetTitleBarIcon()
