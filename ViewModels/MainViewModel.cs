@@ -181,27 +181,27 @@ namespace HollowKnightSaveParser.ViewModels
 
         private void LoadSettings()
         {
-            try
-            {
-                CurrentLanguage = Properties.Settings.Default.SelectedLanguage;
-                SelectedGameIndex = Properties.Settings.Default.SelectedGameIndex;
-                SelectedSteamId = Properties.Settings.Default.SelectedSteamId;
-        
-                // 加载每个游戏的路径设置
-                _hollowKnightUseManualPath = Properties.Settings.Default.HollowKnightUseManualPath;
-                _hollowKnightManualPath = Properties.Settings.Default.HollowKnightManualSavePath ?? string.Empty;
-                _silksongUseManualPath = Properties.Settings.Default.SilksongUseManualPath;
-                _silksongManualPath = Properties.Settings.Default.SilksongManualSavePath ?? string.Empty;
-        
-                // 通知属性更新
-                OnPropertyChanged(nameof(UseManualPath));
-                OnPropertyChanged(nameof(ManualSavePath));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"加载设置时出错: {ex.Message}");
-            }
+            // 先加载所有状态变量，但不触发属性变更
+            var savedGameIndex = Properties.Settings.Default.SelectedGameIndex;
+            var silksongUseManual = Properties.Settings.Default.SilksongUseManualPath;
+            var silksongManualPath = Properties.Settings.Default.SilksongManualSavePath;
+            var hollowKnightUseManual = Properties.Settings.Default.HollowKnightUseManualPath;
+            var hollowKnightManualPath = Properties.Settings.Default.HollowKnightManualSavePath;
+    
+            // 先设置内部状态
+            _silksongUseManualPath = silksongUseManual;
+            _silksongManualPath = silksongManualPath;
+            _hollowKnightUseManualPath = hollowKnightUseManual;
+            _hollowKnightManualPath = hollowKnightManualPath;
+    
+            // 最后设置 SelectedGameIndex，此时所有状态已就绪
+            SelectedGameIndex = savedGameIndex;
+    
+            // 手动通知 UI 更新
+            OnPropertyChanged(nameof(UseManualPath));
+            OnPropertyChanged(nameof(ManualSavePath));
         }
+
 
         private void SaveSettings()
         {
@@ -620,6 +620,8 @@ namespace HollowKnightSaveParser.ViewModels
 
         partial void OnSelectedGameIndexChanged(int value)
         {
+            
+            RefreshSaveDirectory();
             // 只通知UI属性更新，不重复调用刷新逻辑
             OnPropertyChanged(nameof(UseManualPath));
             OnPropertyChanged(nameof(ManualSavePath));

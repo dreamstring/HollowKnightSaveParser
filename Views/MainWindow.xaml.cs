@@ -89,15 +89,13 @@ namespace HollowKnightSaveParser.Views
             }
         }
         
+// 在 MainWindow.xaml.cs 中
         protected override void OnClosed(EventArgs e)
         {
-            // 如果你有对 ViewModel 的引用
             if (DataContext is MainViewModel viewModel)
             {
-                // 可以调用一个公共的保存方法
                 viewModel.SaveSettingsOnExit();
             }
-    
             base.OnClosed(e);
         }
 

@@ -36,6 +36,8 @@
     <sys:String x:Key="NoSaveFilesFound">No save files found</sys:String>
     <sys:String x:Key="CheckSaveDirectory">Please ensure the game has created save files, or check if the save directory is correct</sys:String>
     <sys:String x:Key="LoadingSaveFiles">Loading save files...</sys:String>
+    <sys:String x:Key="Manual">Manual</sys:String>
+    <sys:String x:Key="ManualPathMode">Switch to manual path selection mode</sys:String>
 
     <!-- Game Selection -->
     <sys:String x:Key="HollowKnight">HollowKnight</sys:String>

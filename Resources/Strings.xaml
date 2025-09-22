@@ -36,6 +36,8 @@
     <sys:String x:Key="NoSaveFilesFound">未找到存档文件</sys:String>
     <sys:String x:Key="CheckSaveDirectory">请确保游戏已创建存档文件，或检查存档目录是否正确</sys:String>
     <sys:String x:Key="LoadingSaveFiles">正在加载存档文件...</sys:String>
+    <sys:String x:Key="Manual">手动</sys:String>
+    <sys:String x:Key="ManualPathMode">切换到手动选择路径模式</sys:String> 
 
     <!-- 游戏选择 -->
     <sys:String x:Key="HollowKnight">空洞骑士</sys:String>

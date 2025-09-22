@@ -186,7 +186,7 @@
                             <Style.Triggers>
                                 <MultiDataTrigger>
                                     <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding IsSilksongMode}" Value="True" />
+                                        <Condition Binding="{Binding SelectedGameIndex}" Value="1" />  <!-- 改这里：直接判断游戏索引 -->
                                         <Condition Binding="{Binding UseManualPath}" Value="False" />
                                     </MultiDataTrigger.Conditions>
                                     <Setter Property="Visibility" Value="Visible" />
@@ -239,7 +239,7 @@
                         <!-- 路径显示区域 - 自动和手动共用这个区域 -->
                         <Grid Margin="0,4,0,0" Height="32">
                             <!-- 自动模式：普通TextBlock显示检测到的路径 -->
-                            <TextBlock Text="{Binding SaveDirectory}"
+                            <TextBlock Text="{Binding EffectiveSavePath}"
                                        FontSize="12"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        VerticalAlignment="Center"
@@ -292,14 +292,14 @@
 
                     <!-- 路径模式切换按钮 -->
                     <ToggleButton Grid.Column="2"
-                                  Content="手动"
+                                  Content="{DynamicResource Manual}"
                                   IsChecked="{Binding UseManualPath}"
                                   Padding="8,4"
                                   FontSize="12"
                                   Height="32"
                                   Margin="8,0,8,0"
                                   VerticalAlignment="Bottom"
-                                  ToolTip="切换到手动选择路径模式">
+                                  ToolTip="{DynamicResource ManualPathMode}">
                         <ToggleButton.Style>
                             <Style TargetType="ToggleButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
                                 <Style.Triggers>
@@ -325,8 +325,7 @@
                                VerticalAlignment="Bottom" />
                 </Grid>
             </ui:Card>
-
-
+            
             <!-- 列表标题栏 - 独立出来 -->
             <Border Grid.Row="3"
                     Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
