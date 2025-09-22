@@ -25,14 +25,6 @@ namespace HollowKnightSaveParser.Views
             SetTitleBarIcon();
         }
         
-        private void ContextMenu_Opened(object sender, RoutedEventArgs e)
-        {
-            if (sender is ContextMenu cm)
-            {
-                RefreshContextMenuHeaders(cm);
-            }
-        }
-        
         private void RefreshContextMenuHeaders(ContextMenu cm)
         {
             foreach (var mi in cm.Items.OfType<MenuItem>())

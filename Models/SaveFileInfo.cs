@@ -5,104 +5,132 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using HollowKnightSaveParser.Services;
 using Application = System.Windows.Application;
 
 namespace HollowKnightSaveParser.Models
 {
-    // 备份文件信息类
-public class BackupFileInfo : ObservableObject
-{
-    public string FilePath { get; set; } = string.Empty;
-    public string FileName { get; set; } = string.Empty;
-    public DateTime CreatedTime { get; set; }
-    public long FileSize { get; set; }
-    public string FormattedFileSize { get; set; } = string.Empty;
-    public BackupType BackupType { get; set; }
-    
-    // 移除原来的 DisplayName 属性，改为动态计算
-    public string DisplayName => GenerateBackupDisplayName(FileName, CreatedTime, BackupType);
-    public string DetailedDisplayName => $"{DisplayName} - {FormattedFileSize}";
-
-    // 添加刷新方法
-    public void RefreshLocalizedProperties()
+    // 单个备份文件信息
+    public class BackupFileInfo : ObservableObject
     {
-        OnPropertyChanged(nameof(DisplayName));
-        OnPropertyChanged(nameof(DetailedDisplayName));
-    }
+        private BackupTagManager? _tagManager;
 
-    // 将生成显示名称的逻辑移到这里
-    private string GenerateBackupDisplayName(string fileName, DateTime createdTime, BackupType backupType)
-    {
-        var timeStr = createdTime.ToString("MM-dd HH:mm");
-        var customTag = ExtractCustomTag(fileName);
+        public string FilePath { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+        public DateTime CreatedTime { get; set; }
+        public long FileSize { get; set; }
+        public string FormattedFileSize { get; set; } = string.Empty;
+        public BackupType BackupType { get; set; }
 
-        var typeStr = backupType switch
+        public string CustomTag
         {
-            BackupType.Auto => GetString("BackupTypeAuto"),
-            BackupType.BeforeRestore => GetString("BackupTypeBeforeRestore"),
-            BackupType.Timestamped => "",
-            BackupType.Manual => GetString("BackupTypeManual"),
-            _ => GetString("BackupTypeDefault")
-        };
-
-        var parts = new List<string> { timeStr };
-
-        if (!string.IsNullOrWhiteSpace(customTag))
-            parts.Add($"[{customTag}]");
-        else if (!string.IsNullOrEmpty(typeStr))
-            parts.Add($"({typeStr})");
-
-        return string.Join(" ", parts);
-    }
-
-    // 复制 ExtractCustomTag 方法到这里
-    private string ExtractCustomTag(string fileName)
-    {
-        var unifiedBackupRegex = new Regex(@"^user(?<slot>\d+)\.(?<stamp>\d{8}_\d{6})(?:_(?<tag>[^.]+))?\.dat\.bak$",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            
-        var m = unifiedBackupRegex.Match(fileName);
-        if (m.Success && m.Groups["tag"].Success)
-        {
-            var tag = m.Groups["tag"].Value.Trim();
-            if (!string.IsNullOrEmpty(tag))
-                return tag;
+            get
+            {
+                if (_tagManager != null)
+                {
+                    var tag = _tagManager.GetTag(FileName);
+                    System.Diagnostics.Debug.WriteLine(
+                        $"BackupFileInfo.CustomTag - FileName: '{FileName}', Tag: '{tag}'");
+                    return tag ?? string.Empty;
+                }
+                System.Diagnostics.Debug.WriteLine(
+                    $"BackupFileInfo.CustomTag - FileName: '{FileName}', TagManager 为空");
+                return string.Empty;
+            }
         }
 
-        // 其他兼容性逻辑...
-        var alt = Regex.Match(fileName,
-            @"^user\d+_\d{8}_\d{6}_(.+?)\.(dat|json)$",
-            RegexOptions.IgnoreCase);
-        if (alt.Success)
-            return alt.Groups[1].Value.Trim();
-
-        var simple = Regex.Match(fileName,
-            @"^user\d+\.(.+?)\.dat\.bak$",
-            RegexOptions.IgnoreCase);
-        if (simple.Success)
+        // 供外部（SaveFileInfo）注入 TagManager
+        public void SetTagManager(BackupTagManager? tagManager)
         {
-            var maybe = simple.Groups[1].Value.Trim();
-            if (!Regex.IsMatch(maybe, @"^\d{8}_\d{6}$"))
-                return maybe;
+            _tagManager = tagManager;
+            System.Diagnostics.Debug.WriteLine(
+                $"BackupFileInfo.SetTagManager - FileName: '{FileName}', TagManager: {(tagManager != null ? "已设置" : "为空")}");
+            // 初次设置时就刷新显示
+            RefreshLocalizedProperties();
         }
 
-        return string.Empty;
+        public string DisplayName => GenerateBackupDisplayName(FileName, CreatedTime, BackupType, CustomTag);
+        public string DetailedDisplayName => $"{DisplayName} - {FormattedFileSize}";
+
+        public void RefreshLocalizedProperties()
+        {
+            OnPropertyChanged(nameof(CustomTag));
+            OnPropertyChanged(nameof(DisplayName));
+            OnPropertyChanged(nameof(DetailedDisplayName));
+        }
+
+        private string GenerateBackupDisplayName(string fileName, DateTime createdTime, BackupType backupType, string customTag)
+        {
+            var timeStr = createdTime.ToString("MM-dd HH:mm");
+
+            if (!string.IsNullOrWhiteSpace(customTag))
+                return $"{timeStr} [{customTag}]";
+
+            var fileNameTag = ExtractCustomTag(fileName);
+            if (!string.IsNullOrWhiteSpace(fileNameTag))
+                return $"{timeStr} [{fileNameTag}]";
+
+            var typeStr = backupType switch
+            {
+                BackupType.Auto => GetString("BackupTypeAuto"),
+                BackupType.BeforeRestore => GetString("BackupTypeBeforeRestore"),
+                BackupType.Timestamped => "",
+                BackupType.Manual => GetString("BackupTypeManual"),
+                _ => GetString("BackupTypeDefault")
+            };
+
+            return string.IsNullOrEmpty(typeStr) ? timeStr : $"{timeStr} ({typeStr})";
+        }
+
+        private string ExtractCustomTag(string fileName)
+        {
+            var unifiedBackupRegex = new Regex(
+                @"^user(?<slot>\d+)\.(?<stamp>\d{8}_\d{6})(?:_(?<tag>[^.]+))?\.dat\.bak$",
+                RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+            var m = unifiedBackupRegex.Match(fileName);
+            if (m.Success && m.Groups["tag"].Success)
+            {
+                var tag = m.Groups["tag"].Value.Trim();
+                if (!string.IsNullOrEmpty(tag))
+                    return tag;
+            }
+
+            // 兼容格式：user1_20250909_151651_tag.dat / json
+            var alt = Regex.Match(fileName,
+                @"^user\d+_\d{8}_\d{6}_(.+?)\.(dat|json)$",
+                RegexOptions.IgnoreCase);
+            if (alt.Success)
+                return alt.Groups[1].Value.Trim();
+
+            // 兼容：user1.tag.dat.bak（排除纯时间戳）
+            var simple = Regex.Match(fileName,
+                @"^user\d+\.(.+?)\.dat\.bak$",
+                RegexOptions.IgnoreCase);
+            if (simple.Success)
+            {
+                var maybe = simple.Groups[1].Value.Trim();
+                if (!Regex.IsMatch(maybe, @"^\d{8}_\d{6}$"))
+                    return maybe;
+            }
+
+            return string.Empty;
+        }
+
+        private static string GetString(string key)
+        {
+            try
+            {
+                return Application.Current.FindResource(key) as string ?? key;
+            }
+            catch
+            {
+                return key;
+            }
+        }
     }
-
-    private static string GetString(string key)
-    {
-        try
-        {
-            return Application.Current.FindResource(key) as string ?? key;
-        }
-        catch
-        {
-            return key;
-        }
-    }
-}
-
 
     public enum BackupType
     {
@@ -114,10 +142,16 @@ public class BackupFileInfo : ObservableObject
 
     public class SaveFileInfo : ObservableObject
     {
-        // 新增：统一解析正则  
+        private BackupTagManager? _tagManager;
+
+        // 统一备份文件命名正则（含 tag）
         private static readonly Regex UnifiedBackupRegex =
             new(@"^user(?<slot>\d+)\.(?<stamp>\d{8}_\d{6})(?:_(?<tag>[^.]+))?\.dat\.bak$",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        // 仅用于解析槽位
+        private static readonly Regex SlotRegex =
+            new(@"^user(?<slot>\d+)\.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public int SlotNumber { get; set; }
         public string BaseName { get; set; } = string.Empty;
@@ -127,7 +161,6 @@ public class BackupFileInfo : ObservableObject
         public List<string> RelatedFiles { get; set; } = new();
 
         private ObservableCollection<BackupFileInfo> _backupVersions = new();
-
         public ObservableCollection<BackupFileInfo> BackupVersions
         {
             get => _backupVersions;
@@ -150,6 +183,62 @@ public class BackupFileInfo : ObservableObject
             }
         }
 
+        // 设置 TagManager（核心：订阅事件 + 刷新）
+        public void SetTagManager(BackupTagManager tagManager)
+        {
+            if (_tagManager != null)
+                _tagManager.TagChanged -= OnGlobalTagChanged;
+
+            _tagManager = tagManager;
+            _tagManager.TagChanged -= OnGlobalTagChanged; // 防重复
+            _tagManager.TagChanged += OnGlobalTagChanged;
+
+            RefreshBackupVersions(); // 初次加载应用标签
+        }
+
+        private bool FileBelongsToCurrentSlot(string fileName)
+        {
+            var m = SlotRegex.Match(fileName);
+            if (!m.Success) return false;
+            if (!int.TryParse(m.Groups["slot"].Value, out var slot)) return false;
+            return slot == SlotNumber;
+        }
+
+        private void OnGlobalTagChanged(string fileName, string newTag)
+        {
+            // 精确判断是否属于此槽位
+            if (!fileName.StartsWith($"user{SlotNumber}.", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            // UI 线程保障
+            void DoUpdate()
+            {
+                var target = BackupVersions.FirstOrDefault(b =>
+                    b.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
+                if (target != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TagChanged->Backup Refresh] {fileName} -> {newTag}");
+                    target.RefreshLocalizedProperties();
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[TagChanged->Not Found, Refresh All] {fileName}");
+                    RefreshBackupVersions();
+                }
+            }
+
+            if (Application.Current?.Dispatcher != null &&
+                !Application.Current.Dispatcher.CheckAccess())
+            {
+                Application.Current.Dispatcher.Invoke(DoUpdate);
+            }
+            else
+            {
+                DoUpdate();
+            }
+        }
+
         public void RefreshBackupVersions()
         {
             BackupVersions.Clear();
@@ -160,11 +249,9 @@ public class BackupFileInfo : ObservableObject
             var categories = CategorizedRelatedFiles;
             var backupFiles = categories["backup"]
                 .Select(filePath =>
-                {
-                    return Path.IsPathRooted(filePath)
+                    Path.IsPathRooted(filePath)
                         ? filePath
-                        : Path.Combine(DirectoryPath, filePath);
-                })
+                        : Path.Combine(DirectoryPath, filePath))
                 .Where(File.Exists)
                 .OrderByDescending(File.GetLastWriteTime)
                 .ToList();
@@ -191,10 +278,9 @@ public class BackupFileInfo : ObservableObject
         {
             var fileInfo = new FileInfo(filePath);
             var fileName = Path.GetFileName(filePath);
-
             var createdTime = ParseTimestampFromFileName(fileName) ?? fileInfo.LastWriteTime;
 
-            return new BackupFileInfo
+            var backupInfo = new BackupFileInfo
             {
                 FilePath = filePath,
                 FileName = fileName,
@@ -203,9 +289,22 @@ public class BackupFileInfo : ObservableObject
                 FormattedFileSize = FormatFileSize(fileInfo.Length),
                 BackupType = DetermineBackupType(fileName)
             };
+
+            // 注入 TagManager（需要获取自定义标签）
+            backupInfo.SetTagManager(_tagManager);
+            return backupInfo;
         }
 
-        // 使用统一正则解析时间戳 
+        // 旧的单文件刷新（现在事件驱动仍可保留）
+        public void RefreshBackupTag(string fileName)
+        {
+            var backup = BackupVersions.FirstOrDefault(b => b.FileName == fileName);
+            if (backup != null)
+                backup.RefreshLocalizedProperties();
+        }
+
+        public void NotifyBackupVersionsChanged() => OnPropertyChanged(nameof(BackupVersions));
+
         private DateTime? ParseTimestampFromFileName(string fileName)
         {
             try
@@ -219,8 +318,9 @@ public class BackupFileInfo : ObservableObject
                         return ts;
                 }
 
-                // 保留旧格式（例如 user1_20250919.235357.dat / json）：
-                var legacy = Regex.Match(fileName, @"^user\d+_(\d{8})\.(\d{6})\.(dat|json)$", RegexOptions.IgnoreCase);
+                // 兼容旧格式 user1_20250919.235357.dat / json
+                var legacy = Regex.Match(fileName,
+                    @"^user\d+_(\d{8})\.(\d{6})\.(dat|json)$", RegexOptions.IgnoreCase);
                 if (legacy.Success)
                 {
                     var stampStr = legacy.Groups[1].Value + "_" + legacy.Groups[2].Value;
@@ -251,11 +351,12 @@ public class BackupFileInfo : ObservableObject
             return BackupType.Manual;
         }
 
+        // （可删除：与 BackupFileInfo 的显示逻辑重复；保留不调用）
         private string GenerateBackupDisplayName(string fileName, DateTime createdTime)
         {
             var timeStr = createdTime.ToString("MM-dd HH:mm");
             var type = DetermineBackupType(fileName);
-            var customTag = ExtractCustomTag(fileName); // 会返回空或 tag
+            var customTag = ExtractCustomTag(fileName);
 
             var typeStr = type switch
             {
@@ -276,7 +377,6 @@ public class BackupFileInfo : ObservableObject
             return string.Join(" ", parts);
         }
 
-        // 使用统一正则提取 tag 
         private string ExtractCustomTag(string fileName)
         {
             var m = UnifiedBackupRegex.Match(fileName);
@@ -287,14 +387,12 @@ public class BackupFileInfo : ObservableObject
                     return tag;
             }
 
-            // 兼容：user1_20250909_151651_tag.dat / json
             var alt = Regex.Match(fileName,
                 @"^user\d+_\d{8}_\d{6}_(.+?)\.(dat|json)$",
                 RegexOptions.IgnoreCase);
             if (alt.Success)
                 return alt.Groups[1].Value.Trim();
 
-            // 兼容：user1.tag.dat.bak（排除纯时间戳）
             var simple = Regex.Match(fileName,
                 @"^user\d+\.(.+?)\.dat\.bak$",
                 RegexOptions.IgnoreCase);
@@ -317,10 +415,8 @@ public class BackupFileInfo : ObservableObject
         public void RefreshLocalizedProperties()
         {
             foreach (var backup in BackupVersions)
-            {
                 backup.RefreshLocalizedProperties();
-            }
-            
+
             OnPropertyChanged(nameof(FileStatusText));
             OnPropertyChanged(nameof(FileTypeDisplayText));
             OnPropertyChanged(nameof(DetailedFileInfo));

@@ -12,6 +12,9 @@
 - 更新存档路径可以自选，预览兼容多平台存档位置。
 - Allow custom save path selection and support multi-platform save locations in preview.
   <img src="Assets/Update-1.1.2-01.gif" alt="Backup and Restore Menu" width="600">
+- 更新了标签系统，可以给备份的存档添加自定义标签。
+- Update tag system to allow adding custom tags to backup saves.
+  <img src="Assets/Update-1.1.2-02.gif" alt="Backup and Restore Menu" width="600">
 
 ### v1.1.1
 - 更新了备份和恢复的右键菜单，可以管理备份文件并恢复指定版本的存档。

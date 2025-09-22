@@ -209,6 +209,31 @@
     <sys:String x:Key="BackupTypeManual">手动</sys:String>
     <sys:String x:Key="BackupTypeDefault">备份</sys:String>
     
+    <!-- 标签编辑相关 -->
+    <sys:String x:Key="EditBackupTags">编辑备份标签</sys:String>
+    <sys:String x:Key="EditBackupTagDialogTitle">编辑备份标签</sys:String>
+    <sys:String x:Key="SetCustomTagForBackup">为备份文件设置自定义标签</sys:String>
+    <sys:String x:Key="CustomTag">自定义标签:</sys:String>
+    <sys:String x:Key="EmptyToRemoveTag">留空则移除自定义标签</sys:String>
+    <sys:String x:Key="OK">确定</sys:String>
+    <sys:String x:Key="TagEditTooltip">最多50个字符，用于在备份列表中显示</sys:String>
+    
+    <!-- 标签系统状态消息 -->
+    <sys:String x:Key="EditingTag">正在编辑标签...</sys:String>
+    <sys:String x:Key="SavingTag">正在保存标签...</sys:String>
+    <sys:String x:Key="TagUpdated">标签已更新</sys:String>
+    <sys:String x:Key="TagRemoved">标签已移除</sys:String>
+    <sys:String x:Key="TagUpdateFailed">标签更新失败</sys:String>
+    <sys:String x:Key="TagUpdatedFormat">标签已更新：{0}</sys:String>
+    <sys:String x:Key="TagRemovedFormat">已移除 {0} 的标签</sys:String>
+    <sys:String x:Key="TagUpdateFailedFormat">更新 {0} 标签失败：{1}</sys:String>
+    <sys:String x:Key="InvalidTagLength">标签长度不能超过50个字符</sys:String>
+    <sys:String x:Key="TagContainsInvalidChars">标签包含无效字符</sys:String>
+    <sys:String x:Key="TagSaved">标签保存成功</sys:String>
+    <sys:String x:Key="TagSaveFailed">标签保存失败</sys:String>
+    <sys:String x:Key="TagConfigLoadFailed">标签配置加载失败</sys:String>
+    <sys:String x:Key="TagConfigSaveFailed">标签配置保存失败</sys:String>
+    
     <!-- 其他-->
     <sys:String x:Key="Count">个</sys:String>
     <sys:String x:Key="Other">其他</sys:String>

@@ -229,6 +229,31 @@
     <sys:String x:Key="ConfirmCleanupOldBackupsFormat">Are you sure you want to delete {0} old backup files?\n\nThe latest 5 backups will be kept</sys:String>
     <sys:String x:Key="CleanupCompleteFormat">Cleanup complete, deleted {0} old backups</sys:String>
     <sys:String x:Key="CleanupErrorFormat">Failed to cleanup backups: {0}</sys:String>
+    
+    <!-- Tag Edit Related -->
+    <sys:String x:Key="EditBackupTags">Edit Backup Tags</sys:String>
+    <sys:String x:Key="EditBackupTagDialogTitle">Edit Backup Tag</sys:String>
+    <sys:String x:Key="SetCustomTagForBackup">Set custom tag for backup file</sys:String>
+    <sys:String x:Key="CustomTag">Custom Tag:</sys:String>
+    <sys:String x:Key="EmptyToRemoveTag">Leave empty to remove custom tag</sys:String>
+    <sys:String x:Key="OK">OK</sys:String>
+    <sys:String x:Key="TagEditTooltip">Up to 50 characters, displayed in backup list</sys:String>
+    
+    <!-- Tag System Status Messages -->
+    <sys:String x:Key="EditingTag">Editing tag...</sys:String>
+    <sys:String x:Key="SavingTag">Saving tag...</sys:String>
+    <sys:String x:Key="TagUpdated">Tag updated</sys:String>
+    <sys:String x:Key="TagRemoved">Tag removed</sys:String>
+    <sys:String x:Key="TagUpdateFailed">Tag update failed</sys:String>
+    <sys:String x:Key="TagUpdatedFormat">Tag updated: {0}</sys:String>
+    <sys:String x:Key="TagRemovedFormat">Removed tag for {0}</sys:String>
+    <sys:String x:Key="TagUpdateFailedFormat">Failed to update tag for {0}: {1}</sys:String>
+    <sys:String x:Key="InvalidTagLength">Tag length cannot exceed 50 characters</sys:String>
+    <sys:String x:Key="TagContainsInvalidChars">Tag contains invalid characters</sys:String>
+    <sys:String x:Key="TagSaved">Tag saved successfully</sys:String>
+    <sys:String x:Key="TagSaveFailed">Failed to save tag</sys:String>
+    <sys:String x:Key="TagConfigLoadFailed">Failed to load tag configuration</sys:String>
+    <sys:String x:Key="TagConfigSaveFailed">Failed to save tag configuration</sys:String>
             
     <!-- Other -->
     <sys:String x:Key="Count"></sys:String>
