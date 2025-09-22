@@ -2,10 +2,13 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Wpf.Ui.Controls;
 using HollowKnightSaveParser.Resources;
 using HollowKnightSaveParser.ViewModels;
+using Application = System.Windows.Application;
 using MenuItem = Wpf.Ui.Controls.MenuItem;
+using TextBox = Wpf.Ui.Controls.TextBox;
 
 namespace HollowKnightSaveParser.Views
 {
@@ -41,6 +44,24 @@ namespace HollowKnightSaveParser.Views
                     if (value != null)
                         mi.Header = value;
                 }
+            }
+        }
+        
+        // 代码后置
+        private async void OnManualPathLostFocus(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && vm.UseManualPath)
+            {
+                await vm.RefreshSaveDataAsync();
+            }
+        }
+        private void OnGridPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (!(e.OriginalSource is TextBox))
+            {
+                // 使用FocusManager来清除焦点
+                FocusManager.SetFocusedElement(this, null);
+                Keyboard.ClearFocus();
             }
         }
         

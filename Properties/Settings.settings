@@ -19,5 +19,19 @@
         <Setting Name="RememberSteamUser" Type="System.Boolean" Scope="User">
             <Value Profile="(Default)">True</Value>
         </Setting>
+
+        <!-- 为每个游戏分别存储路径设置 -->
+        <Setting Name="HollowKnightUseManualPath" Type="System.Boolean" Scope="User">
+            <Value Profile="(Default)">False</Value>
+        </Setting>
+        <Setting Name="HollowKnightManualSavePath" Type="System.String" Scope="User">
+            <Value Profile="(Default)"/>
+        </Setting>
+        <Setting Name="SilksongUseManualPath" Type="System.Boolean" Scope="User">
+            <Value Profile="(Default)">False</Value>
+        </Setting>
+        <Setting Name="SilksongManualSavePath" Type="System.String" Scope="User">
+            <Value Profile="(Default)"/>
+        </Setting>
     </Settings>
 </SettingsFile>

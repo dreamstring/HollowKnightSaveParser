@@ -6,22 +6,103 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Application = System.Windows.Application;
 
 namespace HollowKnightSaveParser.Models
 {
     // 备份文件信息类
-    public class BackupFileInfo : ObservableObject
-    {
-        public string FilePath { get; set; } = string.Empty;
-        public string FileName { get; set; } = string.Empty;
-        public DateTime CreatedTime { get; set; }
-        public long FileSize { get; set; }
-        public string FormattedFileSize { get; set; } = string.Empty;
-        public BackupType BackupType { get; set; }
-        public string DisplayName { get; set; } = string.Empty;
+public class BackupFileInfo : ObservableObject
+{
+    public string FilePath { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public DateTime CreatedTime { get; set; }
+    public long FileSize { get; set; }
+    public string FormattedFileSize { get; set; } = string.Empty;
+    public BackupType BackupType { get; set; }
+    
+    // 移除原来的 DisplayName 属性，改为动态计算
+    public string DisplayName => GenerateBackupDisplayName(FileName, CreatedTime, BackupType);
+    public string DetailedDisplayName => $"{DisplayName} - {FormattedFileSize}";
 
-        public string DetailedDisplayName => $"{DisplayName} - {FormattedFileSize}";
+    // 添加刷新方法
+    public void RefreshLocalizedProperties()
+    {
+        OnPropertyChanged(nameof(DisplayName));
+        OnPropertyChanged(nameof(DetailedDisplayName));
     }
+
+    // 将生成显示名称的逻辑移到这里
+    private string GenerateBackupDisplayName(string fileName, DateTime createdTime, BackupType backupType)
+    {
+        var timeStr = createdTime.ToString("MM-dd HH:mm");
+        var customTag = ExtractCustomTag(fileName);
+
+        var typeStr = backupType switch
+        {
+            BackupType.Auto => GetString("BackupTypeAuto"),
+            BackupType.BeforeRestore => GetString("BackupTypeBeforeRestore"),
+            BackupType.Timestamped => "",
+            BackupType.Manual => GetString("BackupTypeManual"),
+            _ => GetString("BackupTypeDefault")
+        };
+
+        var parts = new List<string> { timeStr };
+
+        if (!string.IsNullOrWhiteSpace(customTag))
+            parts.Add($"[{customTag}]");
+        else if (!string.IsNullOrEmpty(typeStr))
+            parts.Add($"({typeStr})");
+
+        return string.Join(" ", parts);
+    }
+
+    // 复制 ExtractCustomTag 方法到这里
+    private string ExtractCustomTag(string fileName)
+    {
+        var unifiedBackupRegex = new Regex(@"^user(?<slot>\d+)\.(?<stamp>\d{8}_\d{6})(?:_(?<tag>[^.]+))?\.dat\.bak$",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            
+        var m = unifiedBackupRegex.Match(fileName);
+        if (m.Success && m.Groups["tag"].Success)
+        {
+            var tag = m.Groups["tag"].Value.Trim();
+            if (!string.IsNullOrEmpty(tag))
+                return tag;
+        }
+
+        // 其他兼容性逻辑...
+        var alt = Regex.Match(fileName,
+            @"^user\d+_\d{8}_\d{6}_(.+?)\.(dat|json)$",
+            RegexOptions.IgnoreCase);
+        if (alt.Success)
+            return alt.Groups[1].Value.Trim();
+
+        var simple = Regex.Match(fileName,
+            @"^user\d+\.(.+?)\.dat\.bak$",
+            RegexOptions.IgnoreCase);
+        if (simple.Success)
+        {
+            var maybe = simple.Groups[1].Value.Trim();
+            if (!Regex.IsMatch(maybe, @"^\d{8}_\d{6}$"))
+                return maybe;
+        }
+
+        return string.Empty;
+    }
+
+    private static string GetString(string key)
+    {
+        try
+        {
+            return Application.Current.FindResource(key) as string ?? key;
+        }
+        catch
+        {
+            return key;
+        }
+    }
+}
+
 
     public enum BackupType
     {
@@ -120,8 +201,7 @@ namespace HollowKnightSaveParser.Models
                 CreatedTime = createdTime,
                 FileSize = fileInfo.Length,
                 FormattedFileSize = FormatFileSize(fileInfo.Length),
-                BackupType = DetermineBackupType(fileName),
-                DisplayName = GenerateBackupDisplayName(fileName, createdTime)
+                BackupType = DetermineBackupType(fileName)
             };
         }
 
@@ -236,6 +316,11 @@ namespace HollowKnightSaveParser.Models
 
         public void RefreshLocalizedProperties()
         {
+            foreach (var backup in BackupVersions)
+            {
+                backup.RefreshLocalizedProperties();
+            }
+            
             OnPropertyChanged(nameof(FileStatusText));
             OnPropertyChanged(nameof(FileTypeDisplayText));
             OnPropertyChanged(nameof(DetailedFileInfo));

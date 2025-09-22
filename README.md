@@ -8,7 +8,12 @@
 
 ## 更新日志 / Update Log
 
-### v1.1.1 (Latest)
+### v1.1.2 (Latest)
+- 更新存档路径可以自选，预览兼容多平台存档位置。
+- Allow custom save path selection and support multi-platform save locations in preview.
+  <img src="Assets/Update-1.1.2-01.gif" alt="Backup and Restore Menu" width="600">
+
+### v1.1.1
 - 更新了备份和恢复的右键菜单，可以管理备份文件并恢复指定版本的存档。
 - Updated the backup and restore right-click menu to manage backup files and restore specific archive versions.
   <img src="Assets/Update-1.1.1-01.png" alt="Backup and Restore Menu" width="600">

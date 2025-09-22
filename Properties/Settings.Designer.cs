@@ -81,5 +81,53 @@ namespace HollowKnightSaveParser.Properties {
                 this["RememberSteamUser"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool HollowKnightUseManualPath {
+            get {
+                return ((bool)(this["HollowKnightUseManualPath"]));
+            }
+            set {
+                this["HollowKnightUseManualPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string HollowKnightManualSavePath {
+            get {
+                return ((string)(this["HollowKnightManualSavePath"]));
+            }
+            set {
+                this["HollowKnightManualSavePath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SilksongUseManualPath {
+            get {
+                return ((bool)(this["SilksongUseManualPath"]));
+            }
+            set {
+                this["SilksongUseManualPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SilksongManualSavePath {
+            get {
+                return ((string)(this["SilksongManualSavePath"]));
+            }
+            set {
+                this["SilksongManualSavePath"] = value;
+            }
+        }
     }
 }

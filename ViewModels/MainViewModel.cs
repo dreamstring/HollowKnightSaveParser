@@ -10,9 +10,12 @@ using HollowKnightSaveParser.Services;
 using Wpf.Ui.Controls;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Forms;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.Generic;
+using Application = System.Windows.Application;
+using Clipboard = System.Windows.Clipboard;
 
 namespace HollowKnightSaveParser.ViewModels
 {
@@ -57,7 +60,120 @@ namespace HollowKnightSaveParser.ViewModels
         [ObservableProperty] private bool _isEnglish = false;
 
         [ObservableProperty] private string _currentLanguage = "zh-CN";
+        
+        // 为每个游戏分别存储路径模式和手动路径
+        private bool _hollowKnightUseManualPath = false;
+        private bool _silksongUseManualPath = false;
+        private string _hollowKnightManualPath = string.Empty;
+        private string _silksongManualPath = string.Empty;
 
+        // 手动实现属性，根据当前游戏返回对应的值
+        public bool UseManualPath
+        {
+            get => SelectedGameIndex == 0 ? _hollowKnightUseManualPath : _silksongUseManualPath;
+            set
+            {
+                if (SelectedGameIndex == 0)
+                {
+                    if (SetProperty(ref _hollowKnightUseManualPath, value))
+                    {
+                        RefreshSaveDirectory();
+                        OnPropertyChanged(nameof(EffectiveSavePath));
+                        _ = LoadSaveFilesAsync();
+                        SaveSettings();
+                    }
+                }
+                else
+                {
+                    if (SetProperty(ref _silksongUseManualPath, value))
+                    {
+                        RefreshSaveDirectory();
+                        OnPropertyChanged(nameof(EffectiveSavePath));
+                        _ = LoadSaveFilesAsync();
+                        SaveSettings();
+                    }
+                }
+            }
+        }
+
+        public string ManualSavePath
+        {
+            get => SelectedGameIndex == 0 ? _hollowKnightManualPath : _silksongManualPath;
+            set
+            {
+                if (SelectedGameIndex == 0)
+                {
+                    if (SetProperty(ref _hollowKnightManualPath, value))
+                    {
+                        if (UseManualPath)
+                        {
+                            RefreshSaveDirectory();
+                            _ = LoadSaveFilesAsync();
+                        }
+                        OnPropertyChanged(nameof(EffectiveSavePath));
+                        SaveSettings();
+                    }
+                }
+                else
+                {
+                    if (SetProperty(ref _silksongManualPath, value))
+                    {
+                        if (UseManualPath)
+                        {
+                            RefreshSaveDirectory();
+                            _ = LoadSaveFilesAsync();
+                        }
+                        OnPropertyChanged(nameof(EffectiveSavePath));
+                        SaveSettings();
+                    }
+                }
+            }
+        }
+
+        public string EffectiveSavePath => UseManualPath ? ManualSavePath : SaveDirectory;
+        
+        private void RefreshSaveDirectory()
+        {
+            if (UseManualPath)
+            {
+                // 手动模式：如果手动路径为空或无效，显示"未设置"
+                if (string.IsNullOrEmpty(ManualSavePath) || !Directory.Exists(ManualSavePath))
+                {
+                    SaveDirectory = GetString("NoSavePathSet"); // 需要在资源文件中添加这个键
+                }
+                else
+                {
+                    SaveDirectory = ManualSavePath;
+                }
+            }
+            else
+            {
+                // 自动模式：重新检测路径
+                InitializeSaveDirectory();
+            }
+
+            OnPropertyChanged(nameof(SaveDirectory));
+        }
+        
+        public async Task RefreshSaveDataAsync()
+        {
+            try
+            {
+                if (Directory.Exists(ManualSavePath))
+                {
+                    await LoadSaveFilesAsync();
+                }
+                else
+                {
+                    SaveFiles.Clear();
+                }
+            }
+            catch
+            {
+                SaveFiles.Clear();
+            }
+        }
+        
         public bool HasFiles => SaveFiles.Count > 0;
         public bool HasNoFiles => !IsLoading && SaveFiles.Count == 0;
         public string SaveDirectory { get; private set; } = string.Empty;
@@ -67,26 +183,23 @@ namespace HollowKnightSaveParser.ViewModels
         {
             try
             {
+                CurrentLanguage = Properties.Settings.Default.SelectedLanguage;
                 SelectedGameIndex = Properties.Settings.Default.SelectedGameIndex;
-                CurrentLanguage = Properties.Settings.Default.SelectedLanguage ?? "zh-CN";
-
-                // 加载 Steam 相关设置
-                if (!string.IsNullOrEmpty(Properties.Settings.Default.SelectedSteamId))
-                {
-                    SelectedSteamId = Properties.Settings.Default.SelectedSteamId;
-                }
-
-                // 应用加载的语言设置
-                ApplyLanguage(CurrentLanguage);
+                SelectedSteamId = Properties.Settings.Default.SelectedSteamId;
+        
+                // 加载每个游戏的路径设置
+                _hollowKnightUseManualPath = Properties.Settings.Default.HollowKnightUseManualPath;
+                _hollowKnightManualPath = Properties.Settings.Default.HollowKnightManualSavePath ?? string.Empty;
+                _silksongUseManualPath = Properties.Settings.Default.SilksongUseManualPath;
+                _silksongManualPath = Properties.Settings.Default.SilksongManualSavePath ?? string.Empty;
+        
+                // 通知属性更新
+                OnPropertyChanged(nameof(UseManualPath));
+                OnPropertyChanged(nameof(ManualSavePath));
             }
             catch (Exception ex)
             {
-                // 使用默认值
-                SelectedGameIndex = 0;
-                CurrentLanguage = "zh-CN";
-                SelectedSteamId = null;
-                ApplyLanguage(CurrentLanguage);
-                System.Diagnostics.Debug.WriteLine($"加载设置失败: {ex.Message}");
+                Debug.WriteLine($"加载设置时出错: {ex.Message}");
             }
         }
 
@@ -94,25 +207,24 @@ namespace HollowKnightSaveParser.ViewModels
         {
             try
             {
-                Properties.Settings.Default.SelectedGameIndex = SelectedGameIndex;
                 Properties.Settings.Default.SelectedLanguage = CurrentLanguage;
-                Properties.Settings.Default.SelectedSteamId = SelectedSteamId ?? string.Empty;
-
-                // 如果有选中的 Steam 用户，也保存用户ID
-                if (SelectedSteamUser != null)
-                {
-                    Properties.Settings.Default.LastSelectedSteamUserId = SelectedSteamUser.UserId;
-                }
-
+                Properties.Settings.Default.SelectedGameIndex = SelectedGameIndex;
+                Properties.Settings.Default.SelectedSteamId = SelectedSteamId;
+        
+                // 保存每个游戏的路径设置
+                Properties.Settings.Default.HollowKnightUseManualPath = _hollowKnightUseManualPath;
+                Properties.Settings.Default.HollowKnightManualSavePath = _hollowKnightManualPath;
+                Properties.Settings.Default.SilksongUseManualPath = _silksongUseManualPath;
+                Properties.Settings.Default.SilksongManualSavePath = _silksongManualPath;
+        
                 Properties.Settings.Default.Save();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"保存设置失败: {ex.Message}");
+                Debug.WriteLine($"保存设置时出错: {ex.Message}");
             }
         }
-
-
+        
         public void SaveSettingsOnExit()
         {
             SaveSettings();
@@ -169,16 +281,41 @@ namespace HollowKnightSaveParser.ViewModels
         }
 
         [RelayCommand]
+        private void BrowseManualPath()
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.Description = "选择存档文件夹";
+                dialog.ShowNewFolderButton = false;
+
+                // 设置初始路径
+                if (!string.IsNullOrEmpty(ManualSavePath) && Directory.Exists(ManualSavePath))
+                {
+                    dialog.SelectedPath = ManualSavePath;
+                }
+                else if (!string.IsNullOrEmpty(SaveDirectory) && Directory.Exists(SaveDirectory))
+                {
+                    dialog.SelectedPath = SaveDirectory;
+                }
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    ManualSavePath = dialog.SelectedPath;
+                }
+            }
+        }
+
+        [RelayCommand]
         private void ToggleLanguage()
         {
             try
             {
                 string newCulture;
-        
+
                 // 判断当前语言
                 var currentLangDict = Application.Current.Resources.MergedDictionaries
                     .FirstOrDefault(d => d.Source?.OriginalString?.Contains("Strings") == true);
-            
+
                 if (currentLangDict?.Source?.OriginalString?.Contains("en") == true)
                 {
                     // 当前是英文，切换到中文
@@ -206,33 +343,31 @@ namespace HollowKnightSaveParser.ViewModels
                 ShowStatus("Error", $"Language switch failed: {ex.Message}", InfoBarSeverity.Error);
             }
         }
-        
+
         private void SwitchLanguageResources(string cultureName)
         {
             var app = Application.Current;
-    
+
             // 移除所有现有的语言资源字典
             var oldLangDicts = app.Resources.MergedDictionaries
-                .Where(d => d.Source != null && 
-                            (d.Source.OriginalString.Contains("Strings.xaml") || 
+                .Where(d => d.Source != null &&
+                            (d.Source.OriginalString.Contains("Strings.xaml") ||
                              d.Source.OriginalString.Contains("Strings.en.xaml")))
                 .ToList();
-    
+
             foreach (var dict in oldLangDicts)
             {
                 app.Resources.MergedDictionaries.Remove(dict);
             }
 
             // 添加新的语言资源字典
-            var resourcePath = cultureName == "en-US" ? 
-                "Resources/Strings.en.xaml" : 
-                "Resources/Strings.xaml";
-        
+            var resourcePath = cultureName == "en-US" ? "Resources/Strings.en.xaml" : "Resources/Strings.xaml";
+
             var newDict = new ResourceDictionary
             {
                 Source = new Uri(resourcePath, UriKind.Relative)
             };
-    
+
             app.Resources.MergedDictionaries.Add(newDict);
         }
 
@@ -403,6 +538,29 @@ namespace HollowKnightSaveParser.ViewModels
                 {
                     SaveSettings(); // 保存语言设置
                 }
+                else if (e.PropertyName == nameof(UseManualPath))
+                {
+                    OnPropertyChanged(nameof(EffectiveSavePath));
+                    if (!UseManualPath)
+                    {
+                        // 切换到自动模式时重新检测路径
+                        if (SelectedGameIndex == 0)
+                        {
+                            InitializeSaveDirectory();
+                        }
+                        else if (SelectedGameIndex == 1)
+                        {
+                            OnSteamIdChanged();
+                        }
+                    }
+
+                    SaveSettings(); // 保存设置
+                }
+                else if (e.PropertyName == nameof(ManualSavePath))
+                {
+                    OnPropertyChanged(nameof(EffectiveSavePath));
+                    SaveSettings(); // 保存设置
+                }
             };
 
             InitializeAsync();
@@ -462,10 +620,16 @@ namespace HollowKnightSaveParser.ViewModels
 
         partial void OnSelectedGameIndexChanged(int value)
         {
-            OnPropertyChanged(nameof(IsSilksongMode)); // 通知 IsSilksongMode 属性变化
-            OnGameChanged();
+            // 只通知UI属性更新，不重复调用刷新逻辑
+            OnPropertyChanged(nameof(UseManualPath));
+            OnPropertyChanged(nameof(ManualSavePath));
+            OnPropertyChanged(nameof(EffectiveSavePath));
+            OnPropertyChanged(nameof(SaveDirectory));
+    
+            // 保存设置
+            SaveSettings();
         }
-
+        
         private void OnSteamUserChanged()
         {
             if (SelectedGameIndex == 1 && SelectedSteamUser != null) // 丝之歌
@@ -631,17 +795,40 @@ namespace HollowKnightSaveParser.ViewModels
 
             try
             {
-                if (SelectedGameIndex == 0) // 空洞骑士
+                string currentSaveDirectory = EffectiveSavePath;
+
+                // 手动模式：直接使用手动路径
+                if (UseManualPath)
                 {
-                    InitializeSaveDirectory();
+                    if (string.IsNullOrEmpty(ManualSavePath) || !Directory.Exists(ManualSavePath))
+                    {
+                        ShowStatus(GetString("Error"), GetString("ManualPathNotSet"), InfoBarSeverity.Error);
+                        return;
+                    }
+
+                    currentSaveDirectory = ManualSavePath;
                 }
-                else if (SelectedGameIndex == 1 && SelectedSteamUser == null) // 丝之歌但未选择用户
+                else
                 {
-                    ShowStatus(GetString("Info"), GetString("SelectSteamUser"), InfoBarSeverity.Warning);
-                    return;
+                    // 自动模式：根据游戏类型检测路径
+                    if (SelectedGameIndex == 0) // 空洞骑士
+                    {
+                        InitializeSaveDirectory();
+                        currentSaveDirectory = SaveDirectory;
+                    }
+                    else if (SelectedGameIndex == 1) // 丝之歌
+                    {
+                        if (SelectedSteamUser == null && string.IsNullOrEmpty(SelectedSteamId))
+                        {
+                            ShowStatus(GetString("Info"), GetString("SelectSteamUser"), InfoBarSeverity.Warning);
+                            return;
+                        }
+
+                        currentSaveDirectory = SaveDirectory;
+                    }
                 }
 
-                if (!Directory.Exists(SaveDirectory))
+                if (!Directory.Exists(currentSaveDirectory))
                 {
                     ShowStatus(GetString("Error"), GetString("SaveDirNotFound"), InfoBarSeverity.Error);
                     return;
@@ -649,7 +836,7 @@ namespace HollowKnightSaveParser.ViewModels
 
                 await Task.Run(() =>
                 {
-                    var saveFileGroups = GroupSaveFiles();
+                    var saveFileGroups = GroupSaveFiles(currentSaveDirectory);
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -663,7 +850,6 @@ namespace HollowKnightSaveParser.ViewModels
 
                 if (SaveFiles.Count > 0)
                 {
-                    // 根据最近操作显示不同信息
                     var statusMessage = GetLoadCompleteMessage();
                     ShowStatus(statusMessage.Title, statusMessage.Detail, InfoBarSeverity.Success);
                 }
@@ -953,14 +1139,17 @@ namespace HollowKnightSaveParser.ViewModels
             return result == Wpf.Ui.Controls.MessageBoxResult.Primary;
         }
 
-        private SaveFileInfo[] GroupSaveFiles()
+        private SaveFileInfo[] GroupSaveFiles(string? directory = null)
         {
-            if (!Directory.Exists(SaveDirectory))
+            string targetDirectory = directory ?? EffectiveSavePath; // 使用传入的目录或有效路径
+
+            if (!Directory.Exists(targetDirectory))
                 return Array.Empty<SaveFileInfo>();
 
-            var allFiles = Directory.GetFiles(SaveDirectory, "user*", SearchOption.TopDirectoryOnly);
+            var allFiles = Directory.GetFiles(targetDirectory, "user*", SearchOption.TopDirectoryOnly);
             var saveFileGroups = new Dictionary<int, SaveFileInfo>();
 
+            // ... 其余代码保持不变
             foreach (var filePath in allFiles)
             {
                 var fileName = Path.GetFileName(filePath);
@@ -1017,7 +1206,7 @@ namespace HollowKnightSaveParser.ViewModels
             {
                 saveFile.RefreshBackupVersions(); // 在这里调用
             }
-    
+
             return result;
         }
 
@@ -1107,11 +1296,13 @@ namespace HollowKnightSaveParser.ViewModels
         {
             try
             {
-                if (Directory.Exists(SaveDirectory))
+                string pathToOpen = EffectiveSavePath; // 使用有效路径
+
+                if (Directory.Exists(pathToOpen))
                 {
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = SaveDirectory,
+                        FileName = pathToOpen,
                         UseShellExecute = true
                     });
                 }
@@ -1175,22 +1366,26 @@ namespace HollowKnightSaveParser.ViewModels
         public ICommand RefreshBackupsCommand => _refreshBackupsCommand ??= new RelayCommand<SaveFileInfo>(
             saveFile => RefreshBackups(saveFile),
             saveFile => saveFile != null);
-        
+
         private ICommand? _restoreFromSpecificBackupCommand;
-        public ICommand RestoreFromSpecificBackupCommand => _restoreFromSpecificBackupCommand ??= new RelayCommand<BackupFileInfo>(
-            async backupFile => await RestoreFromBackupAsync(backupFile),
-            backupFile => backupFile != null);
+
+        public ICommand RestoreFromSpecificBackupCommand => _restoreFromSpecificBackupCommand ??=
+            new RelayCommand<BackupFileInfo>(
+                async backupFile => await RestoreFromBackupAsync(backupFile),
+                backupFile => backupFile != null);
 
         private ICommand? _deleteSpecificBackupCommand;
-        public ICommand DeleteSpecificBackupCommand => _deleteSpecificBackupCommand ??= new RelayCommand<BackupFileInfo>(
-            async backupFile => await DeleteBackupAsync(backupFile),
-            backupFile => backupFile != null);
+
+        public ICommand DeleteSpecificBackupCommand => _deleteSpecificBackupCommand ??=
+            new RelayCommand<BackupFileInfo>(
+                async backupFile => await DeleteBackupAsync(backupFile),
+                backupFile => backupFile != null);
 
         private ICommand? _cleanupOldBackupsCommand;
+
         public ICommand CleanupOldBackupsCommand => _cleanupOldBackupsCommand ??= new RelayCommand<SaveFileInfo>(
             async saveFile => await CleanupOldBackupsAsync(saveFile),
             saveFile => saveFile?.HasBackups == true);
-
 
         #endregion
 
@@ -1476,7 +1671,7 @@ namespace HollowKnightSaveParser.ViewModels
                     InfoBarSeverity.Error);
             }
         }
-        
+
         // 清理旧备份
         private async Task CleanupOldBackupsAsync(SaveFileInfo saveFile)
         {
@@ -1490,7 +1685,7 @@ namespace HollowKnightSaveParser.ViewModels
                 }
 
                 var toDelete = backups.Skip(5).ToList(); // 删除除最新5个之外的备份
-        
+
                 var result = await ShowConfirmationDialogAsync(
                     GetString("ConfirmCleanup"),
                     string.Format(GetString("ConfirmCleanupOldBackupsFormat"), toDelete.Count));
@@ -1507,15 +1702,15 @@ namespace HollowKnightSaveParser.ViewModels
 
                 // 刷新文件列表
                 await LoadSaveFilesAsync();
-        
-                ShowStatus("Success", string.Format(GetString("CleanupCompleteFormat"), toDelete.Count), InfoBarSeverity.Success);
+
+                ShowStatus("Success", string.Format(GetString("CleanupCompleteFormat"), toDelete.Count),
+                    InfoBarSeverity.Success);
             }
             catch (Exception ex)
             {
                 ShowStatus("Error", string.Format(GetString("CleanupErrorFormat"), ex.Message), InfoBarSeverity.Error);
             }
         }
-
 
         #endregion
     }

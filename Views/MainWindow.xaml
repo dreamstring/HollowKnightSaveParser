@@ -15,6 +15,7 @@
     <ui:FluentWindow.Resources>
         <converters:FileStatusToBrushConverter x:Key="FileStatusToBrushConverter" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
         <converters:BoolToLanguageTextConverter x:Key="BoolToLanguageTextConverter" />
         <converters:TupleConverter x:Key="TupleConverter" />
 
@@ -40,7 +41,9 @@
         </ui:TitleBar>
 
         <!-- 主要内容 -->
-        <Grid Grid.Row="1" Margin="20">
+        <Grid Grid.Row="1" Margin="20" Focusable="True" Background="Transparent" 
+              PreviewMouseLeftButtonDown="OnGridPreviewMouseDown">
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />  <!-- 标题区域 -->
                 <RowDefinition Height="Auto" />  <!-- Tab 控件 -->
@@ -173,11 +176,24 @@
                     </ui:Button>
                 </StackPanel>
 
-                <!-- 右侧：Steam ID 选择器（仅在丝之歌模式下显示） -->
+                <!-- 右侧：Steam ID 选择器（仅在丝之歌模式且非手动模式下显示） -->
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Visibility="{Binding IsSilksongMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            VerticalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsSilksongMode}" Value="True" />
+                                        <Condition Binding="{Binding UseManualPath}" Value="False" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
 
                     <TextBlock Text="{DynamicResource SteamId}"
                                FontSize="12"
@@ -188,7 +204,6 @@
                     <ComboBox ItemsSource="{Binding AvailableSteamIds}"
                               SelectedItem="{Binding SelectedSteamId}"
                               MinWidth="120"
-                              Height="32"
                               FontSize="12">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -200,11 +215,12 @@
             </Grid>
 
             <!-- 存档目录信息卡片 -->
-            <ui:Card Grid.Row="2" Margin="0,0,0,20">
-                <Grid Margin="6,6">
+            <ui:Card Grid.Row="2" Margin="0,0,0,16">
+                <Grid Margin="12,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
@@ -214,24 +230,102 @@
                                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="{DynamicResource SaveDirectory}"
-                                   FontWeight="Medium" FontSize="14"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                        <TextBlock Text="{Binding SaveDirectory}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   TextTrimming="CharacterEllipsis"
-                                   Margin="0,2,0,0" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{DynamicResource SaveDirectory}"
+                                       FontWeight="Medium" FontSize="14"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </StackPanel>
+
+                        <!-- 路径显示区域 - 自动和手动共用这个区域 -->
+                        <Grid Margin="0,4,0,0" Height="32">
+                            <!-- 自动模式：普通TextBlock显示检测到的路径 -->
+                            <TextBlock Text="{Binding SaveDirectory}"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding SaveDirectory}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding UseManualPath}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- 手动模式：路径选择器 -->
+                            <Grid
+                                Visibility="{Binding UseManualPath, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 改成可编辑的TextBox -->
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding ManualSavePath, UpdateSourceTrigger=PropertyChanged}"
+                                         LostFocus="OnManualPathLostFocus"
+                                         FontSize="12"
+                                         IsReadOnly="False"
+                                         Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                         VerticalContentAlignment="Center"
+                                         Height="32"
+                                         Margin="0,0,4,0"
+                                         ToolTip="{Binding ManualSavePath}" />
+
+
+                                <ui:Button Grid.Column="1"
+                                           Content="..."
+                                           Command="{Binding BrowseManualPathCommand}"
+                                           Width="32"
+                                           Height="32"
+                                           FontSize="12"
+                                           Padding="0"
+                                           ToolTip="{DynamicResource BrowseFolder}" />
+                            </Grid>
+                        </Grid>
                     </StackPanel>
 
-                    <ui:Button Grid.Column="2"
+                    <!-- 路径模式切换按钮 -->
+                    <ToggleButton Grid.Column="2"
+                                  Content="手动"
+                                  IsChecked="{Binding UseManualPath}"
+                                  Padding="8,4"
+                                  FontSize="12"
+                                  Height="32"
+                                  Margin="8,0,8,0"
+                                  VerticalAlignment="Bottom"
+                                  ToolTip="切换到手动选择路径模式">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter Property="Background"
+                                                Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                        <Setter Property="BorderBrush"
+                                                Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                        <Setter Property="Foreground"
+                                                Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+
+                    <ui:Button Grid.Column="3"
                                Content="{DynamicResource OpenFolder}"
                                Command="{Binding OpenSaveDirectoryCommand}"
                                Appearance="Secondary"
                                FontSize="12"
-                               Height="32" />
+                               Height="32"
+                               VerticalAlignment="Bottom" />
                 </Grid>
             </ui:Card>
+
 
             <!-- 列表标题栏 - 独立出来 -->
             <Border Grid.Row="3"
