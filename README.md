@@ -2,7 +2,9 @@
 
 <img src="Assets/HollowKnightSaveParser - 1.1.1.png" alt="HollowKnightSaveParser" width="600">
 
-Nexus Mods : [https://www.nexusmods.com/hollowknightsilksong/mods/319](url) | [https://www.nexusmods.com/hollowknight/mods/113](url)
+Nexus Mods Link : 
+[https://www.nexusmods.com/hollowknightsilksong/mods/319](https://www.nexusmods.com/hollowknightsilksong/mods/319)
+[https://www.nexusmods.com/hollowknight/mods/113](https://www.nexusmods.com/hollowknight/mods/113)
 
 [中文](#中文) | [English](#english)
 
