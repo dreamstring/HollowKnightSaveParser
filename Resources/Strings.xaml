@@ -128,7 +128,7 @@
     <sys:String x:Key="SteamUserFormat">Steam 用户 {0}</sys:String>
     <sys:String x:Key="BackupCompleteDetailFormat">{0}，已将 {1} 备份为 {2}</sys:String>
     <sys:String x:Key="BackupCompleteGenericFormat">{0}，备份操作已生效</sys:String>
-    <sys:String x:Key="RestoreCompleteDetailFormat">{0}，已从 {1} 恢复到 {2}</sys:String>
+    <sys:String x:Key="RestoreCompleteDetailFormat">已从 {0} 恢复到 {1}</sys:String>
     <sys:String x:Key="RestoreCompleteGenericFormat">{0}，存档已从备份恢复</sys:String>
     <sys:String x:Key="BackupFilesDetectedFormat">检测到 {0} 个备份文件</sys:String>
     <sys:String x:Key="ModdedSavesFormat">{0} 个存档含Mod数据</sys:String>
@@ -201,6 +201,8 @@
     <sys:String x:Key="ConfirmCleanupOldBackupsFormat">确定要删除 {0} 个旧备份文件吗？&#10;&#10;将保留最新的5个备份</sys:String>
     <sys:String x:Key="CleanupCompleteFormat">清理完成，已删除 {0} 个旧备份</sys:String>
     <sys:String x:Key="CleanupErrorFormat">清理备份失败：{0}</sys:String>
+    <sys:String x:Key="ParamParseFailed">参数解析失败</sys:String>
+    <sys:String x:Key="DeleteBackupSuccessFormat">已删除备份 {0}</sys:String>
     
     <!-- 备份类型 -->
     <sys:String x:Key="BackupTypeAuto">自动</sys:String>
@@ -217,6 +219,10 @@
     <sys:String x:Key="EmptyToRemoveTag">留空则移除自定义标签</sys:String>
     <sys:String x:Key="OK">确定</sys:String>
     <sys:String x:Key="TagEditTooltip">最多50个字符，用于在备份列表中显示</sys:String>
+    <sys:String x:Key="SavingTagForFileFormat">正在为文件 {0} 保存标签</sys:String>
+    <sys:String x:Key="TagSavedForFileFormat">已为文件 {0} 设置标签：{1}</sys:String>
+    <sys:String x:Key="TagRemovedForFileFormat">已移除文件 {0} 的标签</sys:String>
+    <sys:String x:Key="EditingTagForFileFormat">正在编辑文件 {0} 的标签</sys:String>
     
     <!-- 标签系统状态消息 -->
     <sys:String x:Key="EditingTag">正在编辑标签...</sys:String>

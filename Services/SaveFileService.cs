@@ -54,8 +54,8 @@ namespace HollowKnightSaveParser.Services
 
                 outputPath ??= Path.ChangeExtension(jsonFilePath, ".dat");
 
-                // 关键：必须要有原始 DAT 文件作为模板
-                string? templatePath = FindTemplateDatFile(jsonFilePath);
+                // 必须要有原始 DAT 文件作为模板
+                string? templatePath = FindTemplateDatFile(jsonFilePath, strict: true);
                 if (templatePath == null)
                 {
                     return new ConversionResult
@@ -118,78 +118,123 @@ namespace HollowKnightSaveParser.Services
         }
 
         // 查找模板文件 - 更智能的查找逻辑
-        private string? FindTemplateDatFile(string jsonFilePath)
+        private string? FindTemplateDatFile(string jsonFilePath, bool strict = true)
         {
             string directory = Path.GetDirectoryName(jsonFilePath) ?? "";
-            string jsonFileName = Path.GetFileNameWithoutExtension(jsonFilePath);
+            string originalBase = Path.GetFileNameWithoutExtension(jsonFilePath);
+            Console.WriteLine("=== FindTemplateDatFile Debug (Enhanced) ===");
+            Console.WriteLine($"Path : {jsonFilePath}");
+            Console.WriteLine($"Base : {originalBase}");
+            Console.WriteLine($"Dir  : {directory}");
 
-            Console.WriteLine($"=== FindTemplateDatFile Debug ===");
-            Console.WriteLine($"JSON文件路径: {jsonFilePath}");
-            Console.WriteLine($"搜索目录: {directory}");
-            Console.WriteLine($"JSON文件名: {jsonFileName}");
+            // 处理链式扩展（例如 user4.20250101_120000_tag.dat.bak.json）
+            string baseName = StripChainedExtensions(originalBase);
 
-            // 1. 优先查找同名的 DAT 文件
-            string sameName = Path.Combine(directory, jsonFileName + ".dat");
-            Console.WriteLine($"检查同名文件: {sameName}");
-            Console.WriteLine($"同名文件存在: {File.Exists(sameName)}");
-            if (File.Exists(sameName))
+            // 顺序策略
+            // A 同名
+            if (TryReturn(baseName)) return Path.Combine(directory, baseName + ".dat");
+
+            // B 去后缀
+            string stripped = StripKnownSuffixes(baseName);
+            if (!string.Equals(stripped, baseName, StringComparison.OrdinalIgnoreCase) && TryReturn(stripped))
+                return Path.Combine(directory, stripped + ".dat");
+
+            // C 去时间戳/标签
+            string fromTs = TryRemoveTimestampSegment(baseName);
+            if (!string.IsNullOrEmpty(fromTs) && TryReturn(fromTs))
+                return Path.Combine(directory, fromTs + ".dat");
+
+            // D 槽位解析
+            int? slot = ParseSlot(baseName);
+            if (slot.HasValue && TryReturn($"user{slot.Value}"))
+                return Path.Combine(directory, $"user{slot.Value}.dat");
+
+            // E 宽松兜底（仅 strict = false 时）
+            if (!strict)
             {
-                Console.WriteLine($"找到同名模板: {sameName}");
-                return sameName;
-            }
-
-            // 2. 查找移除后缀的原始文件
-            string[] suffixes = { "_backup", "_modified", "_edited", "_copy", "_new" };
-            foreach (string suffix in suffixes)
-            {
-                if (jsonFileName.EndsWith(suffix))
+                var datFiles = Directory.GetFiles(directory, "user*.dat")
+                    .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                foreach (var f in datFiles)
                 {
-                    string originalName = jsonFileName.Substring(0, jsonFileName.Length - suffix.Length);
-                    string originalPath = Path.Combine(directory, originalName + ".dat");
-                    Console.WriteLine($"检查原始文件: {originalPath}");
-                    Console.WriteLine($"原始文件存在: {File.Exists(originalPath)}");
-                    if (File.Exists(originalPath))
+                    if (IsDatValid(f))
                     {
-                        Console.WriteLine($"找到原始模板: {originalPath}");
-                        return originalPath;
+                        Console.WriteLine($"宽松模式兜底返回: {f}");
+                        return f;
                     }
                 }
             }
 
-// 3. 查找同目录下符合userX.dat格式的有效DAT文件
-            var datFiles = Directory.GetFiles(directory, "user*.dat"); // 只查找userX.dat
-            Console.WriteLine($"目录下用户DAT文件数量: {datFiles.Length}");
-
-// 如果没有找到userX.dat，尝试查找user1.dat作为默认模板
-            if (datFiles.Length == 0)
+            Console.WriteLine("未找到模板（严格模式或全部无效）");
+            return null;
+            
+            bool TryReturn(string bn)
             {
-                string defaultTemplate = Path.Combine(directory, "user1.dat");
-                Console.WriteLine($"尝试默认模板: {defaultTemplate}");
-                if (File.Exists(defaultTemplate))
+                string full = Path.Combine(directory, bn + ".dat");
+                if (File.Exists(full) && IsDatValid(full))
                 {
-                    datFiles = new[] { defaultTemplate };
+                    Console.WriteLine($"匹配成功 => {full}");
+                    return true;
                 }
+
+                return false;
             }
 
-            foreach (var datFile in datFiles)
+            string StripChainedExtensions(string name)
             {
-                Console.WriteLine($"测试用户DAT文件: {datFile}");
+                while (true)
+                {
+                    if (name.EndsWith(".dat", StringComparison.OrdinalIgnoreCase))
+                        name = name[..^4];
+                    else if (name.EndsWith(".bak", StringComparison.OrdinalIgnoreCase))
+                        name = name[..^4];
+                    else
+                        break;
+                }
+
+                return name;
+            }
+
+            string StripKnownSuffixes(string name)
+            {
+                string[] suffixes = { "_backup", "_modified", "_edited", "_copy", "_new", "_bak" };
+                foreach (var s in suffixes)
+                    if (name.EndsWith(s, StringComparison.OrdinalIgnoreCase))
+                        return name[..^s.Length];
+                if (name.EndsWith(".before_restore", StringComparison.OrdinalIgnoreCase))
+                    return name[..^(".before_restore".Length)];
+                return name;
+            }
+
+            string TryRemoveTimestampSegment(string name)
+            {
+                var m = Regex.Match(name,
+                    @"^(user\d+)[\._](\d{8}_\d{6})(?:[\._].+)?$",
+                    RegexOptions.IgnoreCase);
+                return m.Success ? m.Groups[1].Value : string.Empty;
+            }
+
+            int? ParseSlot(string name)
+            {
+                var m = Regex.Match(name, @"^user(\d+)\b", RegexOptions.IgnoreCase);
+                if (m.Success && int.TryParse(m.Groups[1].Value, out var slotNum))
+                    return slotNum;
+                return null;
+            }
+
+            bool IsDatValid(string path)
+            {
                 try
                 {
-                    ExtractBase64FromDatFile(datFile);
-                    Console.WriteLine($"找到有效用户模板: {datFile}");
-                    return datFile;
+                    ExtractBase64FromDatFile(path);
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"用户DAT文件无效: {ex.Message}");
-                    continue;
+                    Console.WriteLine($"验证失败 {path}: {ex.Message}");
+                    return false;
                 }
             }
-
-
-            Console.WriteLine("未找到任何模板文件");
-            return null;
         }
 
 

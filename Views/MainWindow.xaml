@@ -648,15 +648,14 @@
                                                             <MenuItem Tag="RestoreSpecificBackup"
                                                                       Header="{DynamicResource RestoreSpecificBackup}"
                                                                       IsEnabled="{Binding PlacementTarget.DataContext.HasBackups,
-                                      RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                              RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                                 <MenuItem.Icon>
                                                                     <ui:SymbolIcon Symbol="History24" FontSize="14" />
                                                                 </MenuItem.Icon>
 
                                                                 <MenuItem.ItemsSource>
-                                                                    <Binding
-                                                                        Path="PlacementTarget.DataContext.BackupVersions"
-                                                                        RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                                    <Binding Path="PlacementTarget.DataContext.BackupVersions"
+                                                                             RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
                                                                 </MenuItem.ItemsSource>
 
                                                                 <MenuItem.ItemContainerStyle>
@@ -665,9 +664,18 @@
                                                                                 Value="{Binding DetailedDisplayName}" />
                                                                         <Setter Property="Command"
                                                                                 Value="{Binding PlacementTarget.Tag.RestoreFromSpecificBackupCommand,
-                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                                                        <Setter Property="CommandParameter"
-                                                                                Value="{Binding}" />
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                        <Setter Property="CommandParameter">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                                                    <!-- 备份对象 BackupFileInfo -->
+                                                                                    <Binding />
+                                                                                    <!-- 所属 SaveFileInfo：行按钮的 DataContext -->
+                                                                                    <Binding RelativeSource="{RelativeSource AncestorType=ContextMenu}"
+                                                                                        Path="PlacementTarget.DataContext" />
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
                                                                     </Style>
                                                                 </MenuItem.ItemContainerStyle>
                                                             </MenuItem>
@@ -678,15 +686,14 @@
                                                             <MenuItem Tag="DeleteBackup"
                                                                       Header="{DynamicResource DeleteBackup}"
                                                                       IsEnabled="{Binding PlacementTarget.DataContext.HasBackups,
-                                      RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                              RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                                 <MenuItem.Icon>
                                                                     <ui:SymbolIcon Symbol="Delete24" FontSize="14" />
                                                                 </MenuItem.Icon>
 
                                                                 <MenuItem.ItemsSource>
-                                                                    <Binding
-                                                                        Path="PlacementTarget.DataContext.BackupVersions"
-                                                                        RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                                    <Binding Path="PlacementTarget.DataContext.BackupVersions"
+                                                                             RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
                                                                 </MenuItem.ItemsSource>
 
                                                                 <MenuItem.ItemContainerStyle>
@@ -695,12 +702,20 @@
                                                                                 Value="{Binding DetailedDisplayName}" />
                                                                         <Setter Property="Command"
                                                                                 Value="{Binding PlacementTarget.Tag.DeleteSpecificBackupCommand,
-                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                                                        <Setter Property="CommandParameter"
-                                                                                Value="{Binding}" />
+                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                        <Setter Property="CommandParameter">
+                                                                            <Setter.Value>
+                                                                                <MultiBinding Converter="{StaticResource TupleConverter}">
+                                                                                    <Binding />
+                                                                                    <Binding RelativeSource="{RelativeSource AncestorType=ContextMenu}"
+                                                                                        Path="PlacementTarget.DataContext" />
+                                                                                </MultiBinding>
+                                                                            </Setter.Value>
+                                                                        </Setter>
                                                                     </Style>
                                                                 </MenuItem.ItemContainerStyle>
                                                             </MenuItem>
+
                                                         </ContextMenu>
                                                     </ui:Button.ContextMenu>
 

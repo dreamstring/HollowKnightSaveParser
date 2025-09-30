@@ -143,7 +143,7 @@
     <sys:String x:Key="SteamUserFormat">Steam User {0}</sys:String>
     <sys:String x:Key="BackupCompleteDetailFormat">{0}, backed up {1} as {2}</sys:String>
     <sys:String x:Key="BackupCompleteGenericFormat">{0}, backup operation completed</sys:String>
-    <sys:String x:Key="RestoreCompleteDetailFormat">{0}, restored from {1} to {2}</sys:String>
+    <sys:String x:Key="RestoreCompleteDetailFormat">restored from {1} to {2}</sys:String>
     <sys:String x:Key="RestoreCompleteGenericFormat">{0}, save restored from backup</sys:String>
     <sys:String x:Key="BackupFilesDetectedFormat">Detected {0} backup files</sys:String>
     <sys:String x:Key="ModdedSavesFormat">{0} saves contain mod data</sys:String>
@@ -229,6 +229,8 @@
     <sys:String x:Key="ConfirmCleanupOldBackupsFormat">Are you sure you want to delete {0} old backup files?\n\nThe latest 5 backups will be kept</sys:String>
     <sys:String x:Key="CleanupCompleteFormat">Cleanup complete, deleted {0} old backups</sys:String>
     <sys:String x:Key="CleanupErrorFormat">Failed to cleanup backups: {0}</sys:String>
+    <sys:String x:Key="ParamParseFailed">Failed to parse parameters</sys:String>
+    <sys:String x:Key="DeleteBackupSuccessFormat">Successfully deleted backup: {0}</sys:String>
     
     <!-- Tag Edit Related -->
     <sys:String x:Key="EditBackupTags">Edit Backup Tags</sys:String>
@@ -238,6 +240,10 @@
     <sys:String x:Key="EmptyToRemoveTag">Leave empty to remove custom tag</sys:String>
     <sys:String x:Key="OK">OK</sys:String>
     <sys:String x:Key="TagEditTooltip">Up to 50 characters, displayed in backup list</sys:String>
+    <sys:String x:Key="SavingTagForFileFormat">Saving tag for file {0}</sys:String>
+    <sys:String x:Key="TagSavedForFileFormat">Tag set for file {0}: {1}</sys:String>
+    <sys:String x:Key="TagRemovedForFileFormat">Tag removed for file {0}</sys:String>
+    <sys:String x:Key="EditingTagForFileFormat">Editing tag for file {0}</sys:String>
     
     <!-- Tag System Status Messages -->
     <sys:String x:Key="EditingTag">Editing tag...</sys:String>

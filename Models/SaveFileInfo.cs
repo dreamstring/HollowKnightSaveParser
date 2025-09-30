@@ -23,6 +23,8 @@ namespace HollowKnightSaveParser.Models
         public long FileSize { get; set; }
         public string FormattedFileSize { get; set; } = string.Empty;
         public BackupType BackupType { get; set; }
+        
+        public SaveFileInfo? OwnerSlot { get; internal set; }
 
         public string CustomTag
         {
@@ -238,7 +240,7 @@ namespace HollowKnightSaveParser.Models
                 DoUpdate();
             }
         }
-
+        
         public void RefreshBackupVersions()
         {
             BackupVersions.Clear();
@@ -261,6 +263,8 @@ namespace HollowKnightSaveParser.Models
                 try
                 {
                     var backupInfo = CreateBackupFileInfo(backupFile);
+                    // 确保回填所属槽位（核心改动）
+                    backupInfo.OwnerSlot = this;
                     BackupVersions.Add(backupInfo);
                 }
                 catch (Exception ex)
@@ -273,7 +277,7 @@ namespace HollowKnightSaveParser.Models
             OnPropertyChanged(nameof(BackupCount));
             OnPropertyChanged(nameof(CanRestore));
         }
-
+        
         private BackupFileInfo CreateBackupFileInfo(string filePath)
         {
             var fileInfo = new FileInfo(filePath);
@@ -287,13 +291,16 @@ namespace HollowKnightSaveParser.Models
                 CreatedTime = createdTime,
                 FileSize = fileInfo.Length,
                 FormattedFileSize = FormatFileSize(fileInfo.Length),
-                BackupType = DetermineBackupType(fileName)
+                BackupType = DetermineBackupType(fileName),
+                OwnerSlot = this
             };
 
             // 注入 TagManager（需要获取自定义标签）
             backupInfo.SetTagManager(_tagManager);
+
             return backupInfo;
         }
+
 
         // 旧的单文件刷新（现在事件驱动仍可保留）
         public void RefreshBackupTag(string fileName)

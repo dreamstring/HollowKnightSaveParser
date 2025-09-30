@@ -1029,37 +1029,39 @@ namespace HollowKnightSaveParser.ViewModels
                     string.Format(GetString("RestoringFormat"), saveFile.DisplayFileName),
                     InfoBarSeverity.Informational);
 
-                // 确定目标文件路径
-                string targetPath;
-                if (saveFile.HasDatFile && !string.IsNullOrEmpty(saveFile.DatFilePath))
+                // 构造一个 BackupFileInfo（如果 UI 中已有对象可直接传，不必重新构造）
+                var backupInfo = new BackupFileInfo
                 {
-                    // 如果已有 DAT 文件，先备份当前文件
-                    var currentBackupPath = saveFile.DatFilePath + ".before_restore.bak";
-                    File.Copy(saveFile.DatFilePath, currentBackupPath, true);
-                    targetPath = saveFile.DatFilePath;
-                }
-                else
-                {
-                    // 如果没有 DAT 文件，构造目标路径
-                    targetPath = Path.Combine(saveFile.DirectoryPath, $"{saveFile.BaseName}.dat");
-                }
+                    FilePath = backupPath,
+                    FileName = Path.GetFileName(backupPath),
+                    OwnerSlot = saveFile
+                };
 
-                // 从备份恢复
-                File.Copy(backupPath, targetPath, true);
+                // 调用统一内部恢复逻辑（内部会生成 before_restore + 覆盖 + 删除 JSON）
+                RestoreFromBackupInternal(backupInfo, saveFile);
 
-                // 记录具体操作信息 - 统一在这里设置
+                // 记录操作（targetFile 统一为 user{n}.dat）
                 SetLastOperation("restore", new Dictionary<string, object>
                 {
                     ["backupFile"] = backupPath,
-                    ["targetFile"] = Path.GetFileName(targetPath)
+                    ["targetFile"] = $"{saveFile.BaseName}.dat"
                 });
 
+                // 刷新（可选：只刷新该槽位备份 saveFile.RefreshBackupVersions(); 再触发 UI）
                 await LoadSaveFilesAsync();
+
+                // 成功提示
+                ShowStatus("RestoreComplete",
+                    string.Format(GetString("RestoreCompleteDetailFormat"),
+                        Path.GetFileName(backupPath),         
+                        $"{saveFile.BaseName}.dat"), 
+                    InfoBarSeverity.Success);
+
             }
             catch (Exception ex)
             {
                 ShowStatus(GetString("RestoreFailed"),
-                    string.Format(GetString("RestoreErrorFormat"), saveFile.DisplayFileName, ex.Message),
+                    string.Format(GetString("RestoreErrorFormat"), saveFile?.DisplayFileName ?? "N/A", ex.Message),
                     InfoBarSeverity.Error);
             }
         }
@@ -1177,14 +1179,22 @@ namespace HollowKnightSaveParser.ViewModels
                 {
                     (@"^user(\d+)\.dat$", "dat", "standard"),
                     (@"^user(\d+)\.json$", "json", "standard"),
+
+                    // 普通时间戳/自定义命名备份
                     (@"^user(\d+)_[\d\.]+\.dat$", "dat", "backup"),
                     (@"^user(\d+)\.\d{8}_\d{6}\.dat\.bak$", "dat", "backup"),
                     (@"^user(\d+)\.dat\.bak\d*$", "dat", "backup"),
-                    (@"^user(\d+)\.before_restore\.bak$", "dat", "backup"),
+
+                    // before_restore 兼容（旧 & 新）
+                    (@"^user(\d+)\.before_restore\.bak$", "dat", "backup"),                       // 早期可能的最简单形式
+                    (@"^user(\d+)\.dat\.before_restore\.bak$", "dat", "backup"),                  // 旧逻辑：userN.dat.before_restore.bak
+                    (@"^user(\d+)\.before_restore\.\d{8}_\d{6}\.dat\.bak$", "dat", "backup"),     // 新逻辑：userN.before_restore.YYYYMMDD_HHMMSS.dat.bak
+
+                    // MOD 相关
                     (@"^user(\d+)\.modded\.json$", "json", "mod"),
                     (@"^user(\d+).*modded.*$", "other", "mod")
                 };
-
+                
                 foreach (var (pattern, fileType, category) in patterns)
                 {
                     var match = Regex.Match(fileName, pattern, RegexOptions.IgnoreCase);
@@ -1345,9 +1355,11 @@ namespace HollowKnightSaveParser.ViewModels
 
             try
             {
-                // 显示编辑状态
-                ShowStatus("EditingTag", "", InfoBarSeverity.Informational);
-        
+                // 显示编辑状态 - 提供有意义的详细信息
+                ShowStatus("EditingTag", 
+                    string.Format(GetString("EditingTagForFileFormat"), backup.FileName), 
+                    InfoBarSeverity.Informational);
+
                 var dialog = new TagEditDialog(backup.FileName, backup.CustomTag, OnTagChanged)
                 {
                     Owner = Application.Current.MainWindow
@@ -1367,19 +1379,25 @@ namespace HollowKnightSaveParser.ViewModels
             {
                 if (_backupTagManager == null) return;
 
-                ShowStatus("SavingTag", "", InfoBarSeverity.Informational);
+                ShowStatus("SavingTag", 
+                    string.Format(GetString("SavingTagForFileFormat"), fileName), 
+                    InfoBarSeverity.Informational);
 
                 await _backupTagManager.SetTagAsync(fileName, newTag);
-                // 不做任何手动刷新 —— 事件会驱动 UI
 
-                ShowStatus("TagSaved", "", InfoBarSeverity.Success);
+                // 提供有意义的详细信息
+                var detail = string.IsNullOrEmpty(newTag) 
+                    ? string.Format(GetString("TagRemovedForFileFormat"), fileName)
+                    : string.Format(GetString("TagSavedForFileFormat"), fileName, newTag);
+
+                ShowStatus("TagSaved", detail, InfoBarSeverity.Success);
             }
             catch (Exception ex)
             {
                 ShowStatus("TagSaveFailed", ex.Message, InfoBarSeverity.Error);
             }
         }
-        
+
         #region 右键菜单命令
 
         private ICommand? _createBackupCommand;
@@ -1433,16 +1451,187 @@ namespace HollowKnightSaveParser.ViewModels
         private ICommand? _restoreFromSpecificBackupCommand;
 
         public ICommand RestoreFromSpecificBackupCommand => _restoreFromSpecificBackupCommand ??=
-            new RelayCommand<BackupFileInfo>(
-                async backupFile => await RestoreFromBackupAsync(backupFile),
-                backupFile => backupFile != null);
+            new RelayCommand<object>(async param =>
+            {
+                BackupFileInfo? backup = null;
+                SaveFileInfo? slot = null;
+
+                switch (param)
+                {
+                    case ValueTuple<object, object> vt:
+                        backup = vt.Item1 as BackupFileInfo;
+                        slot = vt.Item2 as SaveFileInfo;
+                        break;
+                    case ValueTuple<BackupFileInfo, SaveFileInfo> vt2:
+                        backup = vt2.Item1;
+                        slot = vt2.Item2;
+                        break;
+                    case object[] arr when arr.Length == 2:
+                        backup = arr[0] as BackupFileInfo;
+                        slot = arr[1] as SaveFileInfo;
+                        break;
+                    case BackupFileInfo b when b.OwnerSlot != null:
+                        backup = b;
+                        slot = b.OwnerSlot;
+                        break;
+                }
+
+                if (backup == null || slot == null)
+                {
+                    ShowStatus("RestoreFailed", GetString("ParamParseFailed"), InfoBarSeverity.Error);
+                    return;
+                }
+
+                // 确认对话框（可按需去掉）
+                var confirmed = await ShowConfirmationDialogAsync(
+                    GetString("ConfirmRestore"),
+                    string.Format(GetString("ConfirmRestoreFromBackupFormat"),
+                        backup.DisplayName, $"user{slot.SlotNumber}.dat"));
+                if (!confirmed) return;
+
+                try
+                {
+                    ShowStatus("Restoring",
+                        string.Format(GetString("RestoringFormat"), $"user{slot.SlotNumber}.dat"),
+                        InfoBarSeverity.Informational);
+
+                    RestoreFromBackupInternal(backup, slot);
+
+                    // 刷新该槽位备份
+                    slot.RefreshBackupVersions();
+
+                    // 记录操作（让刷新提示更智能）
+                    SetLastOperation("restore", new Dictionary<string, object>
+                    {
+                        ["backupFile"] = backup.FilePath,
+                        ["targetFile"] = $"user{slot.SlotNumber}.dat"
+                    });
+
+                    ShowStatus("RestoreComplete",
+                        string.Format(GetString("RestoreCompleteDetailFormat"),
+                            Path.GetFileName(backup.FilePath),
+                            $"user{slot.SlotNumber}.dat"),
+                        InfoBarSeverity.Success);
+
+
+                }
+                catch (Exception ex)
+                {
+                    ShowStatus("RestoreFailed",
+                        string.Format(GetString("RestoreErrorFormat"), backup.DisplayName, ex.Message),
+                        InfoBarSeverity.Error);
+                }
+            });
 
         private ICommand? _deleteSpecificBackupCommand;
 
         public ICommand DeleteSpecificBackupCommand => _deleteSpecificBackupCommand ??=
-            new RelayCommand<BackupFileInfo>(
-                async backupFile => await DeleteBackupAsync(backupFile),
-                backupFile => backupFile != null);
+            new RelayCommand<object>(async param =>
+            {
+                BackupFileInfo? backup = null;
+                SaveFileInfo? slot = null;
+
+                switch (param)
+                {
+                    case ValueTuple<object, object> vt:
+                        backup = vt.Item1 as BackupFileInfo;
+                        slot = vt.Item2 as SaveFileInfo;
+                        break;
+                    case ValueTuple<BackupFileInfo, SaveFileInfo> vt2:
+                        backup = vt2.Item1;
+                        slot = vt2.Item2;
+                        break;
+                    case object[] arr when arr.Length == 2:
+                        backup = arr[0] as BackupFileInfo;
+                        slot = arr[1] as SaveFileInfo;
+                        break;
+                    case BackupFileInfo b when b.OwnerSlot != null:
+                        backup = b;
+                        slot = b.OwnerSlot;
+                        break;
+                }
+
+                if (backup == null || slot == null)
+                {
+                    ShowStatus("DeleteFailed", GetString("ParamParseFailed"), InfoBarSeverity.Error);
+                    return;
+                }
+
+                var confirm = await ShowConfirmationDialogAsync(
+                    GetString("ConfirmDelete"),
+                    string.Format(GetString("ConfirmDeleteBackupFormat"), backup.DisplayName));
+                if (!confirm) return;
+
+                try
+                {
+                    if (File.Exists(backup.FilePath))
+                        File.Delete(backup.FilePath);
+
+                    slot.RefreshBackupVersions();
+
+                    ShowStatus("Success",
+                        string.Format(GetString("DeleteBackupSuccessFormat"), backup.DisplayName),
+                        InfoBarSeverity.Success);
+                }
+                catch (Exception ex)
+                {
+                    ShowStatus("DeleteFailed",
+                        string.Format(GetString("DeleteBackupErrorFormat"), ex.Message),
+                        InfoBarSeverity.Error);
+                }
+            });
+
+        private void RestoreFromBackupInternal(BackupFileInfo backup, SaveFileInfo slot,
+            bool deleteJsonAfterRestore = true)
+        {
+            // 目标 DAT 路径
+            string targetDat = slot.DatFilePath;
+            if (string.IsNullOrEmpty(targetDat))
+            {
+                targetDat = Path.Combine(slot.DirectoryPath, $"user{slot.SlotNumber}.dat");
+            }
+
+            // 1. 生成 before_restore 备份（加上 .bak 扩展名，带时间戳）
+            try
+            {
+                if (File.Exists(targetDat))
+                {
+                    string before = Path.Combine(
+                        slot.DirectoryPath,
+                        $"user{slot.SlotNumber}.before_restore.{DateTime.Now:yyyyMMdd_HHmmss}.dat.bak");
+                    File.Copy(targetDat, before, overwrite: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("生成 before_restore 失败: " + ex.Message);
+            }
+
+            // 2. 覆盖
+            File.Copy(backup.FilePath, targetDat, overwrite: true);
+
+            // 3. 更新时间戳（可选）
+            try
+            {
+                File.SetLastWriteTime(targetDat, DateTime.Now);
+            }
+            catch
+            {
+            }
+
+            // 4. 删除可能已存在的 JSON（避免不匹配）
+            if (deleteJsonAfterRestore && slot.HasJsonFile && File.Exists(slot.JsonFilePath))
+            {
+                try
+                {
+                    File.Delete(slot.JsonFilePath);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("删除 JSON 失败: " + ex.Message);
+                }
+            }
+        }
 
         private ICommand? _cleanupOldBackupsCommand;
 
